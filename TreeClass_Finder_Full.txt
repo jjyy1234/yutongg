@@ -1,0 +1,399 @@
+--[[
+    Tree Class Finder — 超级全树木类名扫描
+    适用于原版 LT2 / BusyMod / 改版
+    OrionLib UI
+]]
+
+if not game:IsLoaded() then
+    repeat task.wait() until game:IsLoaded()
+end
+
+local OrionLib = loadstring(game:HttpGet("https://pastebin.com/raw/FUEx0f3G"))()
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+
+local Window = OrionLib:MakeWindow({
+    Name = "Tree Class Finder",
+    HidePremium = false,
+    SaveConfig = false,
+    IntroText = "树木类名全扫描",
+    ConfigFolder = "TreeFinder",
+})
+
+local results = {
+    treeClasses = {},      -- [className] = { count, hasCutEvent, samples }
+    treeRegions = {},
+    nameHits = {},         -- 名字关键词命中
+    logModels = {},
+    remotes = {},
+    axeClasses = {},
+    rawLines = {},
+}
+
+local function addLine(s)
+    table.insert(results.rawLines, s)
+    print("[TreeFinder]", s)
+end
+
+local function scan()
+    results.treeClasses = {}
+    results.treeRegions = {}
+    results.nameHits = {}
+    results.logModels = {}
+    results.remotes = {}
+    results.axeClasses = {}
+    results.rawLines = {}
+
+    addLine("========== 开始扫描 PlaceId=" .. tostring(game.PlaceId) .. " ==========")
+
+    -- 1) TreeRegion
+    local regionCount = 0
+    for _, r in pairs(workspace:GetChildren()) do
+        if r.Name == "TreeRegion" or r.Name:lower():find("treeregion") or r.Name:lower() == "trees" then
+            regionCount = regionCount + 1
+            table.insert(results.treeRegions, r:GetFullName())
+            addLine("[TreeRegion] " .. r:GetFullName())
+            for _, t in pairs(r:GetChildren()) do
+                if t:IsA("Model") then
+                    local tc = t:FindFirstChild("TreeClass")
+                    local cut = t:FindFirstChild("CutEvent")
+                    local wood = t:FindFirstChild("WoodSection")
+                    local owner = t:FindFirstChild("Owner")
+                    local className = tc and tostring(tc.Value) or "(无TreeClass)"
+                    if not results.treeClasses[className] then
+                        results.treeClasses[className] = {
+                            count = 0,
+                            hasCutEvent = 0,
+                            hasWoodSection = 0,
+                            samples = {},
+                        }
+                    end
+                    local info = results.treeClasses[className]
+                    info.count = info.count + 1
+                    if cut then info.hasCutEvent = info.hasCutEvent + 1 end
+                    if wood then info.hasWoodSection = info.hasWoodSection + 1 end
+                    if #info.samples < 3 then
+                        table.insert(info.samples, t:GetFullName())
+                    end
+                end
+            end
+        end
+    end
+    addLine("TreeRegion 数量: " .. regionCount)
+
+    -- 2) 全局 TreeClass（不在 TreeRegion 里的也算）
+    local globalTC = 0
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj.Name == "TreeClass" and (obj:IsA("StringValue") or obj:IsA("StringValue") or obj:IsA("ValueBase")) then
+            globalTC = globalTC + 1
+            local className = tostring(obj.Value)
+            local model = obj.Parent
+            if not results.treeClasses[className] then
+                results.treeClasses[className] = {
+                    count = 0,
+                    hasCutEvent = 0,
+                    hasWoodSection = 0,
+                    samples = {},
+                }
+            end
+            -- 避免 TreeRegion 里重复狂加：只补不在 samples 的
+            local info = results.treeClasses[className]
+            local full = model and model:GetFullName() or obj:GetFullName()
+            local already = false
+            for _, s in pairs(info.samples) do
+                if s == full then already = true break end
+            end
+            if not already then
+                info.count = info.count + 1
+                if model and model:FindFirstChild("CutEvent") then
+                    info.hasCutEvent = info.hasCutEvent + 1
+                end
+                if model and model:FindFirstChild("WoodSection") then
+                    info.hasWoodSection = info.hasWoodSection + 1
+                end
+                if #info.samples < 5 then
+                    table.insert(info.samples, full)
+                end
+            end
+        end
+    end
+    addLine("全局 TreeClass 实例约: " .. globalTC)
+
+    -- 3) 名字关键词扫描（BusyMod / 无 TreeClass 时）
+    local keywords = {
+        "tree", "trunk", "root", "stump", "wood", "log", "bark", "branch",
+        "oak", "birch", "pine", "cherry", "walnut", "fir", "palm", "koa",
+        "flame", "fire", "lava", "star", "frost", "snow", "ice", "gold",
+        "volcano", "swamp", "cave", "zombie", "generic", "section",
+        "loose", "plank", "timber", "sapling"
+    }
+    local nameCount = 0
+    for _, obj in pairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") or obj:IsA("BasePart") or obj:IsA("Folder") then
+            local n = obj.Name:lower()
+            for _, kw in ipairs(keywords) do
+                if n:find(kw, 1, true) then
+                    if not results.nameHits[kw] then
+                        results.nameHits[kw] = { count = 0, samples = {} }
+                    end
+                    results.nameHits[kw].count = results.nameHits[kw].count + 1
+                    if #results.nameHits[kw].samples < 4 then
+                        table.insert(results.nameHits[kw].samples, obj.ClassName .. " | " .. obj:GetFullName())
+                    end
+                    nameCount = nameCount + 1
+                    break
+                end
+            end
+        end
+    end
+    addLine("名字关键词命中对象数(去重前累计): " .. nameCount)
+
+    -- 4) LogModels
+    local logFolder = workspace:FindFirstChild("LogModels") or workspace:FindFirstChild("Logs")
+    if logFolder then
+        addLine("[LogFolder] " .. logFolder:GetFullName() .. " 子物体:" .. #logFolder:GetChildren())
+        local loose = 0
+        for _, c in pairs(logFolder:GetChildren()) do
+            if c.Name:sub(1, 6) == "Loose_" or c.Name:lower():find("loose") then
+                loose = loose + 1
+                if #results.logModels < 8 then
+                    local own = c:FindFirstChild("Owner")
+                    table.insert(results.logModels, c.Name .. " Owner=" .. tostring(own and own.Value))
+                end
+            end
+        end
+        addLine("Loose 木头数: " .. loose)
+    else
+        addLine("[LogFolder] 未找到 LogModels / Logs")
+        -- 全局 Loose_
+        local looseG = 0
+        for _, c in pairs(workspace:GetDescendants()) do
+            if c:IsA("Model") and (c.Name:sub(1, 6) == "Loose_" or c.Name:lower():find("loose")) then
+                looseG = looseG + 1
+                if #results.logModels < 8 then
+                    table.insert(results.logModels, c:GetFullName())
+                end
+            end
+        end
+        addLine("全局 Loose 模型: " .. looseG)
+    end
+
+    -- 5) Interaction / 砍树相关 Remote
+    local inter = RS:FindFirstChild("Interaction")
+    if inter then
+        addLine("[RS.Interaction] 存在")
+        for _, c in pairs(inter:GetDescendants()) do
+            if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") or c:IsA("BindableEvent") then
+                local line = c.ClassName .. " " .. c:GetFullName()
+                table.insert(results.remotes, line)
+                addLine("  " .. line)
+            end
+        end
+    else
+        addLine("[RS.Interaction] 不存在 — 扫描 RS 内含 cut/chop/wood/tree/drag 的 Remote")
+        for _, c in pairs(RS:GetDescendants()) do
+            if c:IsA("RemoteEvent") or c:IsA("RemoteFunction") then
+                local n = c.Name:lower()
+                if n:find("cut") or n:find("chop") or n:find("wood") or n:find("tree")
+                    or n:find("drag") or n:find("axe") or n:find("log") then
+                    local line = c.ClassName .. " " .. c:GetFullName()
+                    table.insert(results.remotes, line)
+                    addLine("  " .. line)
+                end
+            end
+        end
+    end
+
+    -- 6) AxeClasses
+    local ac = RS:FindFirstChild("AxeClasses")
+    if ac then
+        for _, m in pairs(ac:GetChildren()) do
+            table.insert(results.axeClasses, m.Name)
+            addLine("[AxeClass] " .. m.Name)
+        end
+    else
+        addLine("[AxeClasses] 不存在")
+    end
+
+    -- 7) 汇总 TreeClass
+    addLine("---------- TreeClass 汇总 ----------")
+    local sorted = {}
+    for name, info in pairs(results.treeClasses) do
+        table.insert(sorted, { name = name, info = info })
+    end
+    table.sort(sorted, function(a, b) return a.info.count > b.info.count end)
+    if #sorted == 0 then
+        addLine("(没有找到任何 TreeClass)")
+    else
+        for _, item in ipairs(sorted) do
+            local info = item.info
+            addLine(string.format(
+                "Class=%s | 数量=%d | CutEvent=%d | WoodSection=%d",
+                item.name, info.count, info.hasCutEvent, info.hasWoodSection
+            ))
+            for _, s in ipairs(info.samples) do
+                addLine("    例: " .. s)
+            end
+        end
+    end
+
+    addLine("---------- 名字关键词汇总 ----------")
+    local kwSorted = {}
+    for kw, info in pairs(results.nameHits) do
+        table.insert(kwSorted, { kw = kw, info = info })
+    end
+    table.sort(kwSorted, function(a, b) return a.info.count > b.info.count end)
+    for _, item in ipairs(kwSorted) do
+        if item.info.count > 0 then
+            addLine(string.format("关键词 [%s] x%d", item.kw, item.info.count))
+            for _, s in ipairs(item.info.samples) do
+                addLine("    " .. s)
+            end
+        end
+    end
+
+    addLine("========== 扫描结束 ==========")
+    return sorted
+end
+
+local function resultsToString()
+    return table.concat(results.rawLines, "\n")
+end
+
+local function classListString()
+    local names = {}
+    for name, _ in pairs(results.treeClasses) do
+        table.insert(names, name)
+    end
+    table.sort(names)
+    return table.concat(names, ", ")
+end
+
+-------------------------------------------------
+-- UI
+-------------------------------------------------
+local Tab = Window:MakeTab({
+    Name = "扫描",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+Tab:AddSection({ Name = "操作" })
+Tab:AddButton({
+    Name = "开始全图扫描",
+    Callback = function()
+        local ok, err = pcall(scan)
+        if not ok then
+            warn("[TreeFinder] 错误:", err)
+            OrionLib:MakeNotification({ Name = "Finder", Content = "扫描出错看控制台", Time = 3 })
+        else
+            local n = 0
+            for _ in pairs(results.treeClasses) do n = n + 1 end
+            OrionLib:MakeNotification({
+                Name = "Finder",
+                Content = "完成! TreeClass种类=" .. n .. " 详见控制台",
+                Time = 4
+            })
+        end
+    end
+})
+
+Tab:AddButton({
+    Name = "复制全部结果到剪贴板",
+    Callback = function()
+        local s = resultsToString()
+        if s == "" then
+            OrionLib:MakeNotification({ Name = "Finder", Content = "请先扫描", Time = 2 })
+            return
+        end
+        pcall(setclipboard, s)
+        OrionLib:MakeNotification({ Name = "Finder", Content = "已复制全文", Time = 2 })
+    end
+})
+
+Tab:AddButton({
+    Name = "复制 TreeClass 名列表",
+    Callback = function()
+        local s = classListString()
+        if s == "" then
+            OrionLib:MakeNotification({ Name = "Finder", Content = "请先扫描", Time = 2 })
+            return
+        end
+        pcall(setclipboard, s)
+        OrionLib:MakeNotification({ Name = "Finder", Content = "已复制类名", Time = 2 })
+        print("[TreeClass列表]", s)
+    end
+})
+
+Tab:AddButton({
+    Name = "打印 TreeClass 到控制台",
+    Callback = function()
+        print("==== TreeClass ====")
+        for name, info in pairs(results.treeClasses) do
+            print(name, "count=", info.count, "CutEvent=", info.hasCutEvent)
+        end
+    end
+})
+
+Tab:AddSection({ Name = "说明" })
+Tab:AddParagraph(
+    "扫描内容",
+    "TreeRegion / 全局TreeClass / 名字关键词(tree trunk flame star...) / LogModels / Interaction Remote / AxeClasses"
+)
+Tab:AddParagraph(
+    "用法",
+    "点「开始全图扫描」→ 看执行器控制台 → 或复制结果。把 Class= 那些名字用在脚本里。"
+)
+
+local Tab2 = Window:MakeTab({
+    Name = "快速查询",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+Tab2:AddSection({ Name = "单独查关键词（扫描后）" })
+local queryKw = "Flame"
+Tab2:AddTextbox({
+    Name = "关键词",
+    Default = "Flame",
+    TextDisappear = false,
+    Callback = function(v) queryKw = v end
+})
+Tab2:AddButton({
+    Name = "在结果里搜 / 再扫一遍该词",
+    Callback = function()
+        local kw = tostring(queryKw or ""):lower()
+        if kw == "" then return end
+        print("==== 查询:", kw, "====")
+        local hits = 0
+        for _, obj in pairs(workspace:GetDescendants()) do
+            local n = obj.Name:lower()
+            local match = n:find(kw, 1, true)
+            if not match and obj.Name == "TreeClass" and obj:IsA("ValueBase") then
+                match = tostring(obj.Value):lower():find(kw, 1, true)
+            end
+            if match then
+                hits = hits + 1
+                if hits <= 30 then
+                    local extra = ""
+                    if obj.Name == "TreeClass" then
+                        extra = " Value=" .. tostring(obj.Value)
+                    end
+                    print(hits, obj.ClassName, obj:GetFullName() .. extra)
+                end
+            end
+        end
+        print("命中总数:", hits)
+        OrionLib:MakeNotification({ Name = "查询", Content = kw .. " 命中 " .. hits, Time = 3 })
+    end
+})
+
+OrionLib:MakeNotification({
+    Name = "Tree Finder",
+    Content = "已加载，请点「开始全图扫描」",
+    Time = 3
+})
+OrionLib:Init()
+
+print("[TreeClass Finder] 就绪 — 请打开菜单扫描")
