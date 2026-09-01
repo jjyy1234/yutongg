@@ -5679,17 +5679,17 @@ function getHitPointsTbl()
 end
 
 local function get_axe_damage(tool, tree)
-    local axe_class = require(ReplicatedStorage.AxeClasses['AxeClass_' .. tool.ToolName.Value])
-    local axe_table = axe_class.new()
-    if axe_table["SpecialTrees"] then
-        if axe_table["SpecialTrees"][tree] then
+    local ok, result = pcall(function()
+        local axe_class = require(ReplicatedStorage.AxeClasses['AxeClass_' .. tool.ToolName.Value])
+        local axe_table = axe_class.new()
+        if axe_table["SpecialTrees"] and axe_table["SpecialTrees"][tree] then
             return axe_table["SpecialTrees"][tree].Damage
         else
             return axe_table.Damage
         end
-    else
-        return axe_table.Damage
-    end
+    end)
+    if ok and result then return result end
+    return 1.5
 end
 
 function get_axe_cooldown(tool)
@@ -5749,7 +5749,11 @@ end
 
 local function getToolStats(toolName)
     if typeof(toolName) ~= "string" then toolName = toolName.ToolName.Value end
-    return require(ReplicatedStorage.AxeClasses['AxeClass_' .. toolName]).new()
+    local ok, result = pcall(function()
+        return require(ReplicatedStorage.AxeClasses['AxeClass_' .. toolName]).new()
+    end)
+    if ok and result then return result end
+    return { Damage = 1.5, SwingCooldown = 0.1, SpecialTrees = nil }
 end
 
 local getTool = function()
@@ -5781,11 +5785,11 @@ local function cutPart(event, section, height, tool, treeClass)
     end
     ReplicatedStorage.Interaction.RemoteProxy:FireServer(event, {
         tool = tool,
-        faceVector = Vector3.new(-1, 0, 0),
+        faceVector = Vector3.new(0, 0, -1),
         height = height or 0.3,
         sectionId = section or 1,
         hitPoints = axeStats.Damage,
-        cooldown = axeStats.SwingCooldown,
+        cooldown = 0.1,
         cuttingClass = "Axe"
     })
 end
@@ -5893,7 +5897,7 @@ local function autofarm(treeClass)
     task.wait()
     repeat
         cutPart(tree.tree.CutEvent, 1, 0.3, data, treeClass)
-        task.wait(axeStats.SwingCooldown - 14)
+        task.wait(0.1)
     until treeCut
     if bai.autofarm1 == false then notify("完成", "success") end
     tp(oldpos)
