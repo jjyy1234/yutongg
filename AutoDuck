@@ -7,7 +7,7 @@ if queueteleport then
     game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
         if KeepInfYield and not TeleportCheck then
             TeleportCheck = true
-            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/x/x/refs/heads/main/AutoDuck'))()")--替换成自己的库
+            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/jjyy1234/yutongg/refs/heads/main/AutoDuck'))()")--替换成自己的库
         end
     end)
 end
