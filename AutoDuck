@@ -7,7 +7,7 @@ if queueteleport then
     game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
         if KeepInfYield and not TeleportCheck then
             TeleportCheck = true
-            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/jjyy1234/yutongg/refs/heads/main/AutoDuck'))()")--替换成自己的库
+            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/refs/heads/main/AutoDuck'))()")--替换成自己的库
         end
     end)
 end
@@ -269,8 +269,15 @@ task.spawn(function()
             while tick() - waitStart < 6 do
                 if duckFound then
                     pcall(function() connection:Disconnect() end)
-                    notify("Done", "DuckAngel obtained! Rejoining in 3s...")
-                    task.wait(3)
+                    notify("Done", "DuckAngel obtained! Returning to base...")
+                    tp(homeCF + Vector3.new(0, 3, 0))
+                    task.wait(0.5)
+                    local char = lp.Character
+                    if char then
+                        local hum = char:FindFirstChildOfClass("Humanoid")
+                        if hum then hum.Health = 0 end
+                    end
+                    task.wait(2)
                     game:GetService("TeleportService"):Teleport(game.PlaceId)
                     task.wait(0.2)
                     game.Players.LocalPlayer:Kick("Auto DuckAngel script")
