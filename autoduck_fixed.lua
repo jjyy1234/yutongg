@@ -131,6 +131,16 @@ function grabEternalSword()
 	end
 end
 
+function killSelf()
+	local char = lp.Character
+	if char then
+		local hum = char:FindFirstChildOfClass("Humanoid")
+		if hum then
+			hum.Health = 0
+		end
+	end
+end
+
 -- 等服务器初始化完成（MenuGUI.Open 出现）
 local open = lp.PlayerGui:WaitForChild("MenuGUI", 60):WaitForChild("Open", 60)
 repeat task.wait() until open.Visible == true
@@ -277,12 +287,12 @@ task.spawn(function()
 			while tick() - waitStart < 6 do
 				if duckFound then
 					pcall(function() connection:Disconnect() end)
-					-- 拿到鸭了，再去拿永恒剑
 					task.wait(1)
 					grabEternalSword()
 					task.wait(0.5)
-					notify("完成", "天堂鸭+永恒剑已获取，3秒后踢出...")
-					task.wait(3)
+					notify("完成", "天堂鸭+永恒剑已获取，自杀后踢出...")
+					killSelf()
+					task.wait(2)
 					lp:Kick("天堂鸭已获取，请重进私人服")
 					return
 				end
