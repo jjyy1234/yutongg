@@ -44,6 +44,7 @@ local lp = Players.LocalPlayer
 local PAYLOAD = "Ifyouarereadingthisstophackingbrolegitalsokrnlisbadbtw432rewdWdwFe432432rwDWDAVWdawgdGWAYDFGYTUW"
 local Interaction = ReplicatedStorage:WaitForChild("Interaction")
 local ClientIsDragging = Interaction:WaitForChild("ClientIsDragging")
+local ClientInteracted = Interaction:WaitForChild("ClientInteracted")
 local activeDragConnections = {}
 
 function notify(title, text, dur)
@@ -105,6 +106,28 @@ function waitForLand()
 			end
 		end
 		task.wait(0.05)
+	end
+end
+
+-- 拿永恒剑
+function grabEternalSword()
+	notify("永恒剑", "正在获取永恒剑...")
+	local eternal = ReplicatedStorage:FindFirstChild("Eternal")
+	if not eternal then
+		notify("错误", "ReplicatedStorage 找不到 Eternal")
+		return false
+	end
+	tp(CFrame.new(-700.3, 22.1, -252.7))
+	task.wait(0.5)
+	local ok, err = pcall(function()
+		ClientInteracted:FireServer(eternal, "Pick up tool")
+	end)
+	if ok then
+		notify("永恒剑", "永恒剑已获取！")
+		return true
+	else
+		notify("错误", "拿剑失败: " .. tostring(err))
+		return false
 	end
 end
 
@@ -254,7 +277,11 @@ task.spawn(function()
 			while tick() - waitStart < 6 do
 				if duckFound then
 					pcall(function() connection:Disconnect() end)
-					notify("完成", "天堂鸭已获取，3秒后踢出...")
+					-- 拿到鸭了，再去拿永恒剑
+					task.wait(1)
+					grabEternalSword()
+					task.wait(0.5)
+					notify("完成", "天堂鸭+永恒剑已获取，3秒后踢出...")
 					task.wait(3)
 					lp:Kick("天堂鸭已获取，请重进私人服")
 					return
