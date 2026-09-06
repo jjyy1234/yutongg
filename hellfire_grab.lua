@@ -1,14 +1,11 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 local speaker = Players.LocalPlayer
 local PlayerGui = speaker:WaitForChild("PlayerGui")
 
--- 清理旧 UI
 local old = PlayerGui:FindFirstChild("HellfireGrabUI")
 if old then old:Destroy() end
 
--- UI
 local sg = Instance.new("ScreenGui")
 sg.Name = "HellfireGrabUI"
 sg.ResetOnSpawn = false
@@ -28,7 +25,7 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 22)
 title.BackgroundTransparency = 1
-title.Text = "Hellfire Grab"
+title.Text = "HellFire Grab"
 title.TextColor3 = Color3.fromRGB(255, 160, 120)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 13
@@ -41,7 +38,7 @@ btn.BackgroundColor3 = Color3.fromRGB(255, 100, 60)
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 13
-btn.Text = "Grab Hellfire"
+btn.Text = "Grab HellFire"
 btn.BorderSizePixel = 0
 btn.Parent = frame
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
@@ -72,7 +69,6 @@ btn.MouseButton1Click:Connect(function()
 		local hrp = char and char:FindFirstChild("HumanoidRootPart")
 		local originCF = hrp and hrp.CFrame
 
-		-- 传送到地狱火合成点
 		if hrp then
 			hrp.CFrame = CFrame.new(-1684.1, 348.9, 1477.7)
 		end
@@ -80,16 +76,14 @@ btn.MouseButton1Click:Connect(function()
 
 		setStatus("发包拿剑...", Color3.fromRGB(255, 200, 100))
 
-		-- 发包拿 Hellfire（照抄永恒剑逻辑）
 		local ok, err = pcall(function()
 			ReplicatedStorage.Interaction.ClientInteracted:FireServer(
-				ReplicatedStorage:WaitForChild("Hellfire"), "Pick up tool"
+				ReplicatedStorage:WaitForChild("HellFire"), "Pick up tool"
 			)
 		end)
 
 		task.wait(0.5)
 
-		-- 传送回原地
 		local c2 = speaker.Character
 		local r2 = c2 and c2:FindFirstChild("HumanoidRootPart")
 		if r2 and originCF then
@@ -107,7 +101,7 @@ btn.MouseButton1Click:Connect(function()
 		end
 
 		task.wait(2)
-		btn.Text = "Grab Hellfire"
+		btn.Text = "Grab HellFire"
 		btn.BackgroundColor3 = Color3.fromRGB(255, 100, 60)
 		btn.Active = true
 		setStatus("")
