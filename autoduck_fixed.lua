@@ -46,16 +46,6 @@ local Interaction = ReplicatedStorage:WaitForChild("Interaction")
 local ClientIsDragging = Interaction:WaitForChild("ClientIsDragging")
 local activeDragConnections = {}
 
--- 私人服 JobId
-local PRIVATE_SERVER_JOB_ID = "f6012bd7-696f-424d-9a51-2ab84bb2676a"
-local function teleportToPrivateServer()
-	pcall(function()
-		local opts = Instance.new("TeleportOptions")
-		opts.ServerInstanceId = PRIVATE_SERVER_JOB_ID
-		TeleportService:TeleportAsync(game.PlaceId, {lp}, opts)
-	end)
-end
-
 function notify(title, text, dur)
 	dur = dur or 3
 	pcall(function()
@@ -264,11 +254,9 @@ task.spawn(function()
 			while tick() - waitStart < 6 do
 				if duckFound then
 					pcall(function() connection:Disconnect() end)
-					notify("完成", "天堂鸭已获取，3秒后重进...")
+					notify("完成", "天堂鸭已获取，3秒后踢出...")
 					task.wait(3)
-					teleportToPrivateServer()
-					task.wait(0.2)
-					lp:Kick("自动天堂鸭")
+					lp:Kick("天堂鸭已获取，请重进私人服")
 					return
 				end
 				task.wait(0.1)
@@ -277,9 +265,7 @@ task.spawn(function()
 		end
 		task.wait(0.5)
 	end
-	notify("未找到", "5秒后跳转回私人服...")
+	notify("未找到", "5秒后踢出，请重进私人服...")
 	task.wait(5)
-	teleportToPrivateServer()
-	task.wait(0.2)
-	lp:Kick("自动天堂鸭")
+	lp:Kick("未找到天堂鸭，请重进私人服")
 end)
