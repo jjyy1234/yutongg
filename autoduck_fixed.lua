@@ -5,7 +5,7 @@ if queueteleport then
 	game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
 		if KeepInfYield and not TeleportCheck then
 			TeleportCheck = true
-			queueteleport("loadstring(game:HttpGet('https://pastebin.com/raw/0nqaqaaL'))()")
+			queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/jjyy1234/yutongg/main/autoduck_fixed.lua'))()")
 		end
 	end)
 end
@@ -45,6 +45,14 @@ local PAYLOAD = "Ifyouarereadingthisstophackingbrolegitalsokrnlisbadbtw432rewdWd
 local Interaction = ReplicatedStorage:WaitForChild("Interaction")
 local ClientIsDragging = Interaction:WaitForChild("ClientIsDragging")
 local activeDragConnections = {}
+
+-- 私人服传送
+local PRIVATE_SERVER_CODE = "3e16ddde1e15a441ba2d4a9a0e2fb424"
+local function teleportToPrivateServer()
+	pcall(function()
+		TeleportService:TeleportToPrivateServer(game.PlaceId, PRIVATE_SERVER_CODE, {lp})
+	end)
+end
 
 function notify(title, text, dur)
 	dur = dur or 3
@@ -256,9 +264,9 @@ task.spawn(function()
 					pcall(function() connection:Disconnect() end)
 					notify("完成", "天堂鸭已获取，3秒后重进...")
 					task.wait(3)
-					game:GetService("TeleportService"):Teleport(game.PlaceId)
+					teleportToPrivateServer()
 					task.wait(0.2)
-					game.Players.LocalPlayer:Kick("自动天堂鸭/n小中脚本")
+					lp:Kick("自动天堂鸭/n小中脚本")
 					return
 				end
 				task.wait(0.1)
@@ -267,9 +275,9 @@ task.spawn(function()
 		end
 		task.wait(0.5)
 	end
-	notify("未找到", "5秒后跳转至下一个服务器...")
+	notify("未找到", "5秒后跳转至私人服...")
 	task.wait(5)
-	game:GetService("TeleportService"):Teleport(game.PlaceId)
+	teleportToPrivateServer()
 	task.wait(0.2)
-	game.Players.LocalPlayer:Kick("自动天堂鸭/n小中脚本")
+	lp:Kick("自动天堂鸭/n小中脚本")
 end)
