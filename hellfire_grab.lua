@@ -25,8 +25,8 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 22)
 title.BackgroundTransparency = 1
-title.Text = "HellFire Grab"
-title.TextColor3 = Color3.fromRGB(255, 160, 120)
+title.Text = "Vengeance Grab"
+title.TextColor3 = Color3.fromRGB(150, 220, 180)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 13
 title.Parent = frame
@@ -34,11 +34,11 @@ title.Parent = frame
 local btn = Instance.new("TextButton")
 btn.Size = UDim2.new(1, -20, 0, 32)
 btn.Position = UDim2.new(0, 10, 0, 28)
-btn.BackgroundColor3 = Color3.fromRGB(255, 100, 60)
+btn.BackgroundColor3 = Color3.fromRGB(74, 125, 94)
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 13
-btn.Text = "Grab HellFire"
+btn.Text = "Grab Vengeance"
 btn.BorderSizePixel = 0
 btn.Parent = frame
 Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
@@ -61,7 +61,7 @@ end
 btn.MouseButton1Click:Connect(function()
 	btn.Active = false
 	btn.Text = "..."
-	btn.BackgroundColor3 = Color3.fromRGB(120, 80, 60)
+	btn.BackgroundColor3 = Color3.fromRGB(80, 100, 80)
 	setStatus("传送中...", Color3.fromRGB(255, 200, 100))
 
 	task.spawn(function()
@@ -70,7 +70,7 @@ btn.MouseButton1Click:Connect(function()
 		local originCF = hrp and hrp.CFrame
 
 		if hrp then
-			hrp.CFrame = CFrame.new(-1684.1, 348.9, 1477.7)
+			hrp.CFrame = CFrame.new(6464.1, -95.6, -4539.5)
 		end
 		task.wait(0.3)
 
@@ -78,7 +78,7 @@ btn.MouseButton1Click:Connect(function()
 
 		local ok, err = pcall(function()
 			ReplicatedStorage.Interaction.ClientInteracted:FireServer(
-				ReplicatedStorage:WaitForChild("HellFire"), "Pick up tool"
+				ReplicatedStorage:WaitForChild("Vengeance"), "Pick up tool"
 			)
 		end)
 
@@ -101,8 +101,8 @@ btn.MouseButton1Click:Connect(function()
 		end
 
 		task.wait(2)
-		btn.Text = "Grab HellFire"
-		btn.BackgroundColor3 = Color3.fromRGB(255, 100, 60)
+		btn.Text = "Grab Vengeance"
+		btn.BackgroundColor3 = Color3.fromRGB(74, 125, 94)
 		btn.Active = true
 		setStatus("")
 	end)
