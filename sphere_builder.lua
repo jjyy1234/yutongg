@@ -1,37 +1,40 @@
 -- ============================================================
--- Sphere Emoji Builder  (腮红版)
--- 数据从 GitHub 远程加载，可开始/停止，断点续建，0.006s/块
+-- Sphere Emoji Builder v2
+-- 可拖动 UI，Start/Stop/Reset/Paint All 按钮
+-- 断点续建，0.006s/块
 -- ============================================================
 
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
+local UIS = game:GetService("UserInputService")
 local lp = Players.LocalPlayer
 
 -- ===== 远程数据 URL =====
-local MAIN_URL   = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/sphere_emoji_data.lua"
-local BLUSH_URL  = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/blush_data.lua"
+local MAIN_URL  = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/msg_sphere_emoji_max_hollow.lua"
+local BLUSH_URL = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/blush_data.lua"
 
 -- ===== 颜色映射 =====
 local COLOR_MAP = {
-    Star       = Color3.fromRGB(255, 215, 0),    -- 金黄
-    SpookyGhoul= Color3.fromRGB(30,  30,  30),   -- 黑
-    LoneCave   = Color3.fromRGB(60,  40,  20),   -- 深棕
-    Candy      = Color3.fromRGB(255, 182, 193),  -- 粉红腮红
+    Star        = Color3.fromRGB(255, 215, 0),
+    SpookyGhoul = Color3.fromRGB(30,  30,  30),
+    LoneCave    = Color3.fromRGB(60,  40,  20),
+    Candy       = Color3.fromRGB(255, 182, 193),
 }
 
--- ===== 进度存档 key =====
 local SAVE_KEY = "SphereEmojiProgress"
 
--- ===== UI =====
+-- ===== 清理旧 UI =====
 pcall(function() CoreGui:FindFirstChild("SphereBuilderUI"):Destroy() end)
 
+-- ===== 缩放 =====
 local S = math.clamp(math.min(
     workspace.CurrentCamera.ViewportSize.X,
     workspace.CurrentCamera.ViewportSize.Y
 ) / 500, 0.7, 1.3)
 local function px(n) return math.floor(n * S + 0.5) end
 
+-- ===== 主 ScreenGui =====
 local main = Instance.new("ScreenGui")
 main.Name = "SphereBuilderUI"
 main.ResetOnSpawn = false
@@ -39,33 +42,79 @@ main.IgnoreGuiInset = true
 main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 main.Parent = CoreGui
 
+-- ===== Frame =====
+local FW, FH = px(240), px(230)
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, px(240), 0, px(200))
-Frame.Position = UDim2.new(0.5, -px(120), 0.04, 0)
+Frame.Size = UDim2.new(0, FW, 0, FH)
+Frame.Position = UDim2.new(0.5, -FW/2, 0.04, 0)
 Frame.BackgroundColor3 = Color3.fromRGB(250, 238, 245)
 Frame.BackgroundTransparency = 0.04
 Frame.BorderSizePixel = 0
 Frame.Active = false
+Frame.ClipsDescendants = false
 Frame.Parent = main
 Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, px(14))
 local fs = Instance.new("UIStroke", Frame)
-fs.Color = Color3.fromRGB(225, 198, 215); fs.Thickness = math.max(1, S*1.2); fs.Transparency = 0.15
+fs.Color = Color3.fromRGB(225, 198, 215)
+fs.Thickness = math.max(1, S * 1.2)
+fs.Transparency = 0.15
+
+-- ===== 标题条（拖动区域）=====
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, px(32))
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundTransparency = 1
+titleBar.Active = true
+titleBar.ZIndex = 10
+titleBar.Parent = Frame
 
 local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
-titleLbl.Size = UDim2.new(0, px(180), 0, px(26))
-titleLbl.Text = "Sphere Emoji Builder"
+titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
+titleLbl.Text = "Sphere Builder"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
-titleLbl.Font = Enum.Font.Cartoon
-titleLbl.TextSize = px(20)
+titleLbl.Font = Enum.Font.GothamBold
+titleLbl.TextSize = px(13)
 titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-titleLbl.ZIndex = 2
+titleLbl.ZIndex = 11
 titleLbl.Parent = Frame
 
+-- ===== 拖动逻辑 =====
+local dragging, dragStart, startPos = false, nil, nil
+titleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = Frame.Position
+    end
+end)
+titleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+    or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+        Frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+-- ===== 状态标签 =====
 local lblStatus = Instance.new("TextLabel")
 lblStatus.BackgroundTransparency = 1
-lblStatus.Position = UDim2.new(0, px(12), 0, px(34))
+lblStatus.Position = UDim2.new(0, px(12), 0, px(36))
 lblStatus.Size = UDim2.new(1, -px(24), 0, px(14))
 lblStatus.Text = "Ready"
 lblStatus.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -77,7 +126,7 @@ lblStatus.Parent = Frame
 
 local lblProg = Instance.new("TextLabel")
 lblProg.BackgroundTransparency = 1
-lblProg.Position = UDim2.new(0, px(12), 0, px(50))
+lblProg.Position = UDim2.new(0, px(12), 0, px(52))
 lblProg.Size = UDim2.new(1, -px(24), 0, px(13))
 lblProg.Text = ""
 lblProg.TextColor3 = Color3.fromRGB(173, 144, 163)
@@ -87,74 +136,93 @@ lblProg.TextXAlignment = Enum.TextXAlignment.Left
 lblProg.ZIndex = 2
 lblProg.Parent = Frame
 
+-- ===== 进度条 =====
 local barBg = Instance.new("Frame")
 barBg.Size = UDim2.new(1, -px(24), 0, px(5))
-barBg.Position = UDim2.new(0, px(12), 0, px(65))
+barBg.Position = UDim2.new(0, px(12), 0, px(67))
 barBg.BackgroundColor3 = Color3.fromRGB(225, 198, 215)
-barBg.BorderSizePixel = 0; barBg.Active = false; barBg.ZIndex = 2
+barBg.BorderSizePixel = 0
+barBg.Active = false
+barBg.ZIndex = 2
 barBg.Parent = Frame
 Instance.new("UICorner", barBg).CornerRadius = UDim.new(0, px(3))
 
 local barFill = Instance.new("Frame")
 barFill.Size = UDim2.new(0, 0, 1, 0)
 barFill.BackgroundColor3 = Color3.fromRGB(215, 153, 187)
-barFill.BorderSizePixel = 0; barFill.Active = false; barFill.ZIndex = 3
+barFill.BorderSizePixel = 0
+barFill.ZIndex = 3
 barFill.Parent = barBg
 Instance.new("UICorner", barFill).CornerRadius = UDim.new(0, px(3))
 
 local lblSaved = Instance.new("TextLabel")
 lblSaved.BackgroundTransparency = 1
-lblSaved.Position = UDim2.new(0, px(12), 0, px(74))
-lblSaved.Size = UDim2.new(1, -px(24), 0, px(13))
+lblSaved.Position = UDim2.new(0, px(12), 0, px(75))
+lblSaved.Size = UDim2.new(1, -px(24), 0, px(12))
 lblSaved.Text = ""
-lblSaved.TextColor3 = Color3.fromRGB(200, 150, 170)
+lblSaved.TextColor3 = Color3.fromRGB(180, 150, 170)
 lblSaved.Font = Enum.Font.Gotham
 lblSaved.TextSize = px(8)
 lblSaved.TextXAlignment = Enum.TextXAlignment.Left
 lblSaved.ZIndex = 2
 lblSaved.Parent = Frame
 
--- 按钮全挂 main
-local FX, FXO, FY = 0.5, -px(120), 0.04
-local FH = px(200)
-
-local function makeBtn(text, bg, fg, xOff, w, yAbs)
-    local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0, w, 0, px(30))
-    b.Position = UDim2.new(FX, FXO + xOff, 0, FY * workspace.CurrentCamera.ViewportSize.Y + yAbs)
-    b.BackgroundColor3 = bg; b.BorderSizePixel = 0
-    b.Text = text; b.TextColor3 = fg
-    b.Font = Enum.Font.GothamBold; b.TextSize = px(11)
-    b.ZIndex = 20; b.AutoButtonColor = false; b.Active = true
-    b.Parent = main
-    Instance.new("UICorner", b).CornerRadius = UDim.new(1, 0)
-    return b
+-- ===== 按钮工厂 =====
+local function makeBtn(text, x, y, w, h, bg)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, px(w), 0, px(h))
+    btn.Position = UDim2.new(0, px(x), 0, px(y))
+    btn.BackgroundColor3 = bg
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = px(9)
+    btn.BorderSizePixel = 0
+    btn.ZIndex = 5
+    btn.Active = true
+    btn.Parent = Frame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, px(6))
+    return btn
 end
 
-local btnStart = makeBtn("▶ Start",
-    Color3.fromRGB(191,226,205), Color3.fromRGB(72,108,88), px(12), px(100), FH + px(6))
-local btnStop = makeBtn("■ Stop",
-    Color3.fromRGB(245,179,188), Color3.fromRGB(125,75,85), px(118), px(60), FH + px(6))
-local btnReset = makeBtn("Reset",
-    Color3.fromRGB(220,220,235), Color3.fromRGB(100,100,130), px(12), px(72), FH + px(42))
-local btnClose = makeBtn("×",
-    Color3.fromRGB(200,200,210), Color3.fromRGB(100,100,120), FX*2 + px(200), px(24), px(8))
-btnClose.Position = UDim2.new(FX, FXO + px(240) - px(30), 0, FY * workspace.CurrentCamera.ViewportSize.Y + px(8))
+local btnStart = makeBtn("Start",    12,  92, 106, 28, Color3.fromRGB(191, 226, 205))
+local btnStop  = makeBtn("Stop",    126,  92, 102, 28, Color3.fromRGB(226, 191, 191))
+local btnReset = makeBtn("Reset",    12, 128, 106, 28, Color3.fromRGB(191, 210, 240))
+local btnPaint = makeBtn("Paint All",126, 128, 102, 28, Color3.fromRGB(240, 210, 191))
 
--- ===== 状态 =====
+local btnClose = Instance.new("TextButton")
+btnClose.Size = UDim2.new(0, px(22), 0, px(22))
+btnClose.Position = UDim2.new(1, -px(28), 0, px(5))
+btnClose.BackgroundColor3 = Color3.fromRGB(220, 180, 200)
+btnClose.Text = "X"
+btnClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnClose.Font = Enum.Font.GothamBold
+btnClose.TextSize = px(10)
+btnClose.BorderSizePixel = 0
+btnClose.ZIndex = 12
+btnClose.Active = true
+btnClose.Parent = Frame
+Instance.new("UICorner", btnClose).CornerRadius = UDim.new(0, px(11))
+
+-- ===== 状态函数 =====
+local function setStatus(msg, col)
+    lblStatus.Text = msg
+    lblStatus.TextColor3 = col or Color3.fromRGB(145, 103, 134)
+end
+
+local function setProg(cur, total)
+    if total > 0 then
+        barFill.Size = UDim2.new(cur / total, 0, 1, 0)
+    end
+    lblProg.Text = cur .. " / " .. total
+end
+
+-- ===== 状态变量 =====
 local building = false
+local painting = false
 local allData = nil
 local startIdx = 1
-
-local function setStatus(t, color)
-    lblStatus.Text = t
-    if color then lblStatus.TextColor3 = color end
-end
-
-local function setProg(cur, tot)
-    lblProg.Text = cur .. " / " .. tot
-    barFill.Size = UDim2.new(tot > 0 and cur/tot or 0, 0, 1, 0)
-end
+local placedObjects = {}
 
 -- ===== 进度存档 =====
 local function saveProgress(idx)
@@ -169,42 +237,41 @@ local function loadProgress()
         if readfile then return readfile(SAVE_KEY..".txt") end
         return "1"
     end)
-    if ok and val then
-        return tonumber(val) or 1
-    end
+    if ok and val then return tonumber(val) or 1 end
     return 1
 end
 
 -- ===== 加载数据 =====
 local function loadData()
     setStatus("Loading main data...")
-    local ok1, res1 = pcall(function()
-        return game:HttpGet(MAIN_URL)
-    end)
-    if not ok1 then setStatus("ERROR: "..tostring(res1), Color3.fromRGB(200,60,60)) return nil end
+    local ok1, res1 = pcall(function() return game:HttpGet(MAIN_URL) end)
+    if not ok1 then
+        setStatus("ERROR: "..tostring(res1), Color3.fromRGB(200,60,60))
+        return nil
+    end
 
-    local ok2, res2 = pcall(function()
-        return game:HttpGet(BLUSH_URL)
-    end)
-    if not ok2 then setStatus("ERROR blush: "..tostring(res2), Color3.fromRGB(200,60,60)) return nil end
+    local ok2, res2 = pcall(function() return game:HttpGet(BLUSH_URL) end)
+    if not ok2 then
+        setStatus("ERROR blush: "..tostring(res2), Color3.fromRGB(200,60,60))
+        return nil
+    end
 
-    -- 解析主数据
     local mainOk = pcall(loadstring(res1))
     if not mainOk or not _G.MSGSphereEmojiData then
-        setStatus("Parse error: main data", Color3.fromRGB(200,60,60)) return nil
+        setStatus("Parse error: main data", Color3.fromRGB(200,60,60))
+        return nil
     end
 
-    -- 解析腮红数据
     local blushOk = pcall(loadstring(res2))
     if not blushOk or not _G.BlushData then
-        setStatus("Parse error: blush data", Color3.fromRGB(200,60,60)) return nil
+        setStatus("Parse error: blush data", Color3.fromRGB(200,60,60))
+        return nil
     end
 
-    -- 合并
     local combined = {}
     for _, v in ipairs(_G.MSGSphereEmojiData) do
         table.insert(combined, {
-            n = v.n, x = v.x, y = v.y, z = v.z,
+            n=v.n, x=v.x, y=v.y, z=v.z,
             r00=v.r00,r01=v.r01,r02=v.r02,
             r10=v.r10,r11=v.r11,r12=v.r12,
             r20=v.r20,r21=v.r21,r22=v.r22
@@ -212,7 +279,7 @@ local function loadData()
     end
     for _, v in ipairs(_G.BlushData) do
         table.insert(combined, {
-            n = "Candy", x = v.x, y = v.y, z = v.z,
+            n="Candy", x=v.x, y=v.y, z=v.z,
             r00=1,r01=0,r02=0,r10=0,r11=1,r12=0,r20=0,r21=0,r22=1
         })
     end
@@ -222,15 +289,14 @@ local function loadData()
 end
 
 -- ===== 喷漆 =====
-local function paintBlock(obj, colorName)
+local function paintOne(obj, colorName)
     local col = COLOR_MAP[colorName]
-    if not col then return end
+    if not col or not obj then return end
     local paintRemote = RS:FindFirstChild("Interaction") and
                         RS.Interaction:FindFirstChild("PaintObject")
     if paintRemote then
         pcall(function() paintRemote:FireServer(obj, col) end)
     else
-        -- 直接改颜色
         pcall(function()
             for _, p in ipairs(obj:GetDescendants()) do
                 if p:IsA("BasePart") then p.Color = col end
@@ -239,7 +305,7 @@ local function paintBlock(obj, colorName)
     end
 end
 
--- ===== 建造单块 =====
+-- ===== PlaceBlueprint Remote =====
 local placeRemote = nil
 local function getPlaceRemote()
     if placeRemote then return placeRemote end
@@ -250,9 +316,10 @@ local function getPlaceRemote()
     return placeRemote
 end
 
+-- ===== 建造单块 =====
 local function buildOne(entry)
     local remote = getPlaceRemote()
-    if not remote then return false end
+    if not remote then return nil end
     local cf = CFrame.new(entry.x, entry.y, entry.z,
         entry.r00, entry.r01, entry.r02,
         entry.r10, entry.r11, entry.r12,
@@ -261,14 +328,13 @@ local function buildOne(entry)
         return remote:InvokeServer(entry.n, cf)
     end)
     if ok and result then
-        -- 喷漆
         task.spawn(function()
             task.wait(0.05)
-            paintBlock(result, entry.n)
+            paintOne(result, entry.n)
         end)
-        return true
+        return result
     end
-    return false
+    return nil
 end
 
 -- ===== 主建造循环 =====
@@ -282,7 +348,7 @@ local function startBuild()
 
     startIdx = loadProgress()
     building = true
-    btnStart.BackgroundColor3 = Color3.fromRGB(210,210,220)
+    btnStart.BackgroundColor3 = Color3.fromRGB(160, 200, 175)
     setStatus("Building from #" .. startIdx)
 
     local total = #allData
@@ -290,14 +356,10 @@ local function startBuild()
 
     while building and i <= total do
         local entry = allData[i]
-        buildOne(entry)
+        local obj = buildOne(entry)
+        if obj then placedObjects[i] = obj end
         setProg(i, total)
-
-        -- 每50块存一次进度
-        if i % 50 == 0 then
-            saveProgress(i)
-        end
-
+        if i % 50 == 0 then saveProgress(i) end
         i = i + 1
         task.wait(0.006)
     end
@@ -305,46 +367,66 @@ local function startBuild()
     if i > total then
         setStatus("Done! All " .. total .. " blocks placed", Color3.fromRGB(72,130,90))
         barFill.BackgroundColor3 = Color3.fromRGB(140,210,160)
-        saveProgress(1)  -- 重置
+        saveProgress(1)
     else
         saveProgress(i)
         setStatus("Stopped at #" .. i)
     end
 
     building = false
-    btnStart.BackgroundColor3 = Color3.fromRGB(191,226,205)
+    btnStart.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
+end
+
+-- ===== Paint All =====
+local function paintAll()
+    if painting then return end
+    if not allData then
+        setStatus("No data, build first")
+        return
+    end
+    painting = true
+    btnPaint.BackgroundColor3 = Color3.fromRGB(200, 160, 130)
+    setStatus("Painting all blocks...")
+
+    local total = #allData
+    for i, obj in pairs(placedObjects) do
+        if not painting then break end
+        local entry = allData[i]
+        if entry then paintOne(obj, entry.n) end
+        if i % 100 == 0 then
+            setStatus("Painting " .. i .. "/" .. total)
+            task.wait(0.01)
+        end
+    end
+
+    setStatus("Paint done")
+    painting = false
+    btnPaint.BackgroundColor3 = Color3.fromRGB(240, 210, 191)
 end
 
 -- ===== 按钮事件 =====
-btnStart.MouseButton1Click:Connect(function() task.spawn(startBuild) end)
-btnStart.TouchTap:Connect(function() task.spawn(startBuild) end)
+local function bind(btn, fn)
+    btn.MouseButton1Click:Connect(fn)
+    btn.TouchTap:Connect(fn)
+    btn.Activated:Connect(fn)
+end
 
-btnStop.MouseButton1Click:Connect(function()
+bind(btnStart, function() task.spawn(startBuild) end)
+bind(btnStop,  function()
     building = false
+    painting = false
     setStatus("Stopping...")
 end)
-btnStop.TouchTap:Connect(function()
-    building = false
-    setStatus("Stopping...")
-end)
-
-btnReset.MouseButton1Click:Connect(function()
+bind(btnReset, function()
     saveProgress(1)
     startIdx = 1
     lblSaved.Text = "Reset to #1"
     setStatus("Progress reset")
 end)
-btnReset.TouchTap:Connect(function()
-    saveProgress(1)
-    startIdx = 1
-    lblSaved.Text = "Reset to #1"
-    setStatus("Progress reset")
-end)
+bind(btnPaint, function() task.spawn(paintAll) end)
+bind(btnClose, function() main:Destroy() end)
 
-btnClose.MouseButton1Click:Connect(function() main:Destroy() end)
-btnClose.TouchTap:Connect(function() main:Destroy() end)
-
--- 启动时显示已存进度
+-- ===== 启动 =====
 local saved = loadProgress()
 if saved > 1 then
     lblSaved.Text = "Resume from #" .. saved
@@ -353,4 +435,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder] loaded. " .. (allData and #allData or "?") .. " blocks queued.")
+print("[Sphere Builder v2] loaded.")
