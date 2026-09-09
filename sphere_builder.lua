@@ -1,4 +1,4 @@
--- Sphere Emoji Builder v5
+-- Sphere Emoji Builder v6
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -55,7 +55,7 @@ local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
 titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
-titleLbl.Text = "Sphere Builder v5"
+titleLbl.Text = "Sphere Builder v6"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextSize = px(13)
@@ -213,14 +213,13 @@ end
 
 local function loadData()
     setStatus("Loading main data...")
-    _G.MSGSphereEmojiData = nil
-    _G.BlushData = nil
-
     local ok1, res1 = pcall(function() return game:HttpGet(MAIN_URL) end)
     if not ok1 then setStatus("ERR main: "..tostring(res1), Color3.fromRGB(200,60,60)) return nil end
     local f1, err1 = loadstring(res1)
-    if not f1 then setStatus("Parse err main: "..tostring(err1), Color3.fromRGB(200,60,60)) return nil end
+    if not f1 then setStatus("Parse err: "..tostring(err1), Color3.fromRGB(200,60,60)) return nil end
     pcall(f1)
+    local mainData = _G.MSGSphereEmojiData
+    if not mainData then setStatus("No main data", Color3.fromRGB(200,60,60)) return nil end
 
     setStatus("Loading blush data...")
     local ok2, res2 = pcall(function() return game:HttpGet(BLUSH_URL) end)
@@ -228,19 +227,14 @@ local function loadData()
     local f2, err2 = loadstring(res2)
     if not f2 then setStatus("Parse err blush: "..tostring(err2), Color3.fromRGB(200,60,60)) return nil end
     pcall(f2)
-
-    if not _G.MSGSphereEmojiData then
-        setStatus("No main data", Color3.fromRGB(200,60,60)) return nil
-    end
-    if not _G.BlushData then
-        setStatus("No blush data", Color3.fromRGB(200,60,60)) return nil
-    end
+    local blushData = _G.BlushData
+    if not blushData then setStatus("No blush data", Color3.fromRGB(200,60,60)) return nil end
 
     local combined = {}
-    for _, v in ipairs(_G.MSGSphereEmojiData) do
+    for _, v in ipairs(mainData) do
         table.insert(combined, v)
     end
-    for _, v in ipairs(_G.BlushData) do
+    for _, v in ipairs(blushData) do
         table.insert(combined, {
             n="Candy", x=v.x, y=v.y, z=v.z,
             r00=1,r01=0,r02=0,
@@ -350,4 +344,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder v5] loaded.")
+print("[Sphere Builder v6] loaded.")
