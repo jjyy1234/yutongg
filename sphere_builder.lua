@@ -278,7 +278,7 @@ local function startBuild()
         setProg(i, total)
         if i % 50 == 0 then saveProgress(i) end
         i = i + 1
-        task.wait(0.006)
+        task.wait(0.01)
     end
 
     if i > total then
