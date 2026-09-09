@@ -1,4 +1,4 @@
--- Sphere Emoji Builder v4
+-- Sphere Emoji Builder v5
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -9,7 +9,7 @@ local MAIN_URL  = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/msg_s
 local BLUSH_URL = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/blush_data.lua"
 local SAVE_KEY  = "SphereEmojiProgress"
 
-local Event = RS.PlaceStructure.ClientPlacedBlueprint
+local Event      = RS.PlaceStructure.ClientPlacedBlueprint
 local PaintEvent = RS.PlaceStructure.PaintTool
 
 pcall(function() CoreGui:FindFirstChild("SphereBuilderUI"):Destroy() end)
@@ -43,7 +43,6 @@ fs.Color = Color3.fromRGB(225, 198, 215)
 fs.Thickness = math.max(1, S * 1.2)
 fs.Transparency = 0.15
 
--- 标题条（拖动）
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, px(32))
 titleBar.Position = UDim2.new(0, 0, 0, 0)
@@ -56,7 +55,7 @@ local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
 titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
-titleLbl.Text = "Sphere Builder v4"
+titleLbl.Text = "Sphere Builder v5"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextSize = px(13)
@@ -214,35 +213,34 @@ end
 
 local function loadData()
     setStatus("Loading main data...")
+    _G.MSGSphereEmojiData = nil
+    _G.BlushData = nil
+
     local ok1, res1 = pcall(function() return game:HttpGet(MAIN_URL) end)
     if not ok1 then setStatus("ERR main: "..tostring(res1), Color3.fromRGB(200,60,60)) return nil end
-
-    local ok2, res2 = pcall(function() return game:HttpGet(BLUSH_URL) end)
-    if not ok2 then setStatus("ERR blush: "..tostring(res2), Color3.fromRGB(200,60,60)) return nil end
-
-    local env1 = {}
-    local f1 = loadstring(res1)
-    if not f1 then setStatus("Parse err: main", Color3.fromRGB(200,60,60)) return nil end
-    setfenv(f1, setmetatable(env1, {__index = _G}))
+    local f1, err1 = loadstring(res1)
+    if not f1 then setStatus("Parse err main: "..tostring(err1), Color3.fromRGB(200,60,60)) return nil end
     pcall(f1)
 
-    local env2 = {}
-    local f2 = loadstring(res2)
-    if not f2 then setStatus("Parse err: blush", Color3.fromRGB(200,60,60)) return nil end
-    setfenv(f2, setmetatable(env2, {__index = _G}))
+    setStatus("Loading blush data...")
+    local ok2, res2 = pcall(function() return game:HttpGet(BLUSH_URL) end)
+    if not ok2 then setStatus("ERR blush: "..tostring(res2), Color3.fromRGB(200,60,60)) return nil end
+    local f2, err2 = loadstring(res2)
+    if not f2 then setStatus("Parse err blush: "..tostring(err2), Color3.fromRGB(200,60,60)) return nil end
     pcall(f2)
 
-    local mainData  = env1.MSGSphereEmojiData  or _G.MSGSphereEmojiData
-    local blushData = env2.BlushData           or _G.BlushData
-
-    if not mainData  then setStatus("No main data",  Color3.fromRGB(200,60,60)) return nil end
-    if not blushData then setStatus("No blush data", Color3.fromRGB(200,60,60)) return nil end
+    if not _G.MSGSphereEmojiData then
+        setStatus("No main data", Color3.fromRGB(200,60,60)) return nil
+    end
+    if not _G.BlushData then
+        setStatus("No blush data", Color3.fromRGB(200,60,60)) return nil
+    end
 
     local combined = {}
-    for _, v in ipairs(mainData) do
+    for _, v in ipairs(_G.MSGSphereEmojiData) do
         table.insert(combined, v)
     end
-    for _, v in ipairs(blushData) do
+    for _, v in ipairs(_G.BlushData) do
         table.insert(combined, {
             n="Candy", x=v.x, y=v.y, z=v.z,
             r00=1,r01=0,r02=0,
@@ -352,4 +350,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder v4] loaded.")
+print("[Sphere Builder v5] loaded.")
