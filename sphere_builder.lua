@@ -1,4 +1,4 @@
--- Sphere Emoji Builder v7
+-- Sphere Emoji Builder v8
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -55,7 +55,7 @@ local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
 titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
-titleLbl.Text = "Sphere Builder v7"
+titleLbl.Text = "Sphere Builder v8"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextSize = px(13)
@@ -195,6 +195,14 @@ local building = false
 local painting = false
 local allData = nil
 
+-- 颜色映射：数据里的 n 字段 -> LT2 颜色名
+local COLOR_MAP = {
+    Star        = "Star",
+    SpookyGhoul = "SpookyGhoul",
+    LoneCave    = "LoneCave",
+    Candy       = "Candy",
+}
+
 local function saveProgress(idx)
     pcall(function()
         if writefile then writefile(SAVE_KEY..".txt", tostring(idx)) end
@@ -232,11 +240,21 @@ local function loadData()
 
     local combined = {}
     for _, v in ipairs(mainData) do
-        table.insert(combined, v)
+        -- 保留原始颜色名到 color 字段，蓝图名强制用 Floor1Tiny
+        table.insert(combined, {
+            n = "Floor1Tiny",
+            color = v.n,
+            x=v.x, y=v.y, z=v.z,
+            r00=v.r00,r01=v.r01,r02=v.r02,
+            r10=v.r10,r11=v.r11,r12=v.r12,
+            r20=v.r20,r21=v.r21,r22=v.r22
+        })
     end
     for _, v in ipairs(blushData) do
         table.insert(combined, {
-            n="Candy", x=v.x, y=v.y, z=v.z,
+            n = "Floor1Tiny",
+            color = "Candy",
+            x=v.x, y=v.y, z=v.z,
             r00=1,r01=0,r02=0,
             r10=0,r11=1,r12=0,
             r20=0,r21=0,r22=1
@@ -246,6 +264,8 @@ local function loadData()
     setStatus("Loaded " .. #combined .. " blocks")
     return combined
 end
+
+local placedModels = {}
 
 local function buildOne(entry)
     local cf = CFrame.new(
@@ -295,22 +315,55 @@ end
 
 local function paintAll()
     if painting then return end
+    if not allData then
+        setStatus("No data, run Start first")
+        return
+    end
     painting = true
     btnPaint.BackgroundColor3 = Color3.fromRGB(200, 160, 130)
-    setStatus("Painting...")
-    local count = 0
+    setStatus("Scanning for placed blocks...")
+
+    -- 收集所有属于自己的 Model，按位置匹配颜色
+    local myModels = {}
     for _, obj in ipairs(workspace:GetDescendants()) do
-        if not painting then break end
-        if obj:IsA("Model") then
+        if obj:IsA("Model") and obj.Name == "Floor1Tiny" then
             local ow = obj:FindFirstChild("Owner")
-            local ok, val = pcall(function() return ow and ow.Value end)
-            if ok and val == lp then
-                pcall(function() PaintEvent:FireServer(obj, obj.Name) end)
-                count = count + 1
-                task.wait(0.015)
+            if ow and ow.Value == lp then
+                local primary = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                if primary then
+                    local pos = primary.Position
+                    table.insert(myModels, {obj=obj, pos=pos})
+                end
             end
         end
     end
+
+    setStatus("Painting " .. #myModels .. " blocks...")
+    local count = 0
+    for _, entry in ipairs(allData) do
+        if not painting then break end
+        -- 找最近的 model
+        local target = nil
+        local bestDist = 2
+        for _, m in ipairs(myModels) do
+            local dx = m.pos.X - entry.x
+            local dy = m.pos.Y - entry.y
+            local dz = m.pos.Z - entry.z
+            local dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+            if dist < bestDist then
+                bestDist = dist
+                target = m.obj
+            end
+        end
+        if target and entry.color then
+            pcall(function()
+                PaintEvent:FireServer(target, entry.color)
+            end)
+            count = count + 1
+            task.wait(0.015)
+        end
+    end
+
     setStatus("Painted " .. count .. " blocks")
     painting = false
     btnPaint.BackgroundColor3 = Color3.fromRGB(240, 210, 191)
@@ -344,4 +397,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder v7] loaded.")
+print("[Sphere Builder v8] loaded.")
