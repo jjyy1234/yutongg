@@ -1,4 +1,4 @@
--- Sphere Emoji Builder v3
+-- Sphere Emoji Builder v4
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -7,15 +7,10 @@ local lp = Players.LocalPlayer
 
 local MAIN_URL  = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/msg_sphere_emoji_max_hollow.lua"
 local BLUSH_URL = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/blush_data.lua"
+local SAVE_KEY  = "SphereEmojiProgress"
 
-local COLOR_MAP = {
-    Star        = "Star",
-    SpookyGhoul = "SpookyGhoul",
-    LoneCave    = "LoneCave",
-    Candy       = "Candy",
-}
-
-local SAVE_KEY = "SphereEmojiProgress"
+local Event = RS.PlaceStructure.ClientPlacedBlueprint
+local PaintEvent = RS.PlaceStructure.PaintTool
 
 pcall(function() CoreGui:FindFirstChild("SphereBuilderUI"):Destroy() end)
 
@@ -61,7 +56,7 @@ local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
 titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
-titleLbl.Text = "Sphere Builder"
+titleLbl.Text = "Sphere Builder v4"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextSize = px(13)
@@ -69,7 +64,6 @@ titleLbl.TextXAlignment = Enum.TextXAlignment.Left
 titleLbl.ZIndex = 11
 titleLbl.Parent = Frame
 
--- 拖动逻辑
 local dragging, dragStart, startPos = false, nil, nil
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -98,7 +92,6 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- 状态标签
 local lblStatus = Instance.new("TextLabel")
 lblStatus.BackgroundTransparency = 1
 lblStatus.Position = UDim2.new(0, px(12), 0, px(36))
@@ -123,7 +116,6 @@ lblProg.TextXAlignment = Enum.TextXAlignment.Left
 lblProg.ZIndex = 2
 lblProg.Parent = Frame
 
--- 进度条
 local barBg = Instance.new("Frame")
 barBg.Size = UDim2.new(1, -px(24), 0, px(5))
 barBg.Position = UDim2.new(0, px(12), 0, px(67))
@@ -154,7 +146,6 @@ lblSaved.TextXAlignment = Enum.TextXAlignment.Left
 lblSaved.ZIndex = 2
 lblSaved.Parent = Frame
 
--- 按钮工厂
 local function makeBtn(text, x, y, w, h, bg)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, px(w), 0, px(h))
@@ -224,34 +215,39 @@ end
 local function loadData()
     setStatus("Loading main data...")
     local ok1, res1 = pcall(function() return game:HttpGet(MAIN_URL) end)
-    if not ok1 then setStatus("ERROR: "..tostring(res1), Color3.fromRGB(200,60,60)) return nil end
+    if not ok1 then setStatus("ERR main: "..tostring(res1), Color3.fromRGB(200,60,60)) return nil end
 
     local ok2, res2 = pcall(function() return game:HttpGet(BLUSH_URL) end)
-    if not ok2 then setStatus("ERROR blush: "..tostring(res2), Color3.fromRGB(200,60,60)) return nil end
+    if not ok2 then setStatus("ERR blush: "..tostring(res2), Color3.fromRGB(200,60,60)) return nil end
 
-    local mainOk = pcall(loadstring(res1))
-    if not mainOk or not _G.MSGSphereEmojiData then
-        setStatus("Parse error: main data", Color3.fromRGB(200,60,60)) return nil
-    end
+    local env1 = {}
+    local f1 = loadstring(res1)
+    if not f1 then setStatus("Parse err: main", Color3.fromRGB(200,60,60)) return nil end
+    setfenv(f1, setmetatable(env1, {__index = _G}))
+    pcall(f1)
 
-    local blushOk = pcall(loadstring(res2))
-    if not blushOk or not _G.BlushData then
-        setStatus("Parse error: blush data", Color3.fromRGB(200,60,60)) return nil
-    end
+    local env2 = {}
+    local f2 = loadstring(res2)
+    if not f2 then setStatus("Parse err: blush", Color3.fromRGB(200,60,60)) return nil end
+    setfenv(f2, setmetatable(env2, {__index = _G}))
+    pcall(f2)
+
+    local mainData  = env1.MSGSphereEmojiData  or _G.MSGSphereEmojiData
+    local blushData = env2.BlushData           or _G.BlushData
+
+    if not mainData  then setStatus("No main data",  Color3.fromRGB(200,60,60)) return nil end
+    if not blushData then setStatus("No blush data", Color3.fromRGB(200,60,60)) return nil end
 
     local combined = {}
-    for _, v in ipairs(_G.MSGSphereEmojiData) do
-        table.insert(combined, {
-            n=v.n, x=v.x, y=v.y, z=v.z,
-            r00=v.r00,r01=v.r01,r02=v.r02,
-            r10=v.r10,r11=v.r11,r12=v.r12,
-            r20=v.r20,r21=v.r21,r22=v.r22
-        })
+    for _, v in ipairs(mainData) do
+        table.insert(combined, v)
     end
-    for _, v in ipairs(_G.BlushData) do
+    for _, v in ipairs(blushData) do
         table.insert(combined, {
             n="Candy", x=v.x, y=v.y, z=v.z,
-            r00=1,r01=0,r02=0,r10=0,r11=1,r12=0,r20=0,r21=0,r22=1
+            r00=1,r01=0,r02=0,
+            r10=0,r11=1,r12=0,
+            r20=0,r21=0,r22=1
         })
     end
 
@@ -259,45 +255,21 @@ local function loadData()
     return combined
 end
 
--- 获取 Remote
-local placeRemote = nil
-local function getPlaceRemote()
-    if placeRemote then return placeRemote end
-    local ok, r = pcall(function()
-        return RS:WaitForChild("PlaceStructure",5):WaitForChild("ClientPlacedBlueprint",5)
-    end)
-    if ok and r then placeRemote = r end
-    return placeRemote
-end
-
-local paintRemote = nil
-local function getPaintRemote()
-    if paintRemote then return paintRemote end
-    local ok, r = pcall(function()
-        return RS:WaitForChild("PlaceStructure",5):WaitForChild("PaintTool",5)
-    end)
-    if ok and r then paintRemote = r end
-    return paintRemote
-end
-
--- 建造单块
 local function buildOne(entry)
-    local remote = getPlaceRemote()
-    if not remote then return end
-    local cf = CFrame.new(entry.x, entry.y, entry.z,
+    local cf = CFrame.new(
+        entry.x, entry.y, entry.z,
         entry.r00, entry.r01, entry.r02,
         entry.r10, entry.r11, entry.r12,
-        entry.r20, entry.r21, entry.r22)
+        entry.r20, entry.r21, entry.r22
+    )
     pcall(function()
-        remote:FireServer(entry.n, cf, lp)
+        Event:FireServer(entry.n, cf, lp)
     end)
 end
 
--- 主建造循环
 local function startBuild()
     if building then return end
     if not allData then
-        setStatus("Loading data...")
         allData = loadData()
         if not allData then return end
     end
@@ -329,19 +301,11 @@ local function startBuild()
     btnStart.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
 end
 
--- Paint All（喷漆自己放的所有块）
 local function paintAll()
     if painting then return end
     painting = true
     btnPaint.BackgroundColor3 = Color3.fromRGB(200, 160, 130)
     setStatus("Painting...")
-    local remote = getPaintRemote()
-    if not remote then
-        setStatus("PaintTool not found", Color3.fromRGB(200,60,60))
-        painting = false
-        btnPaint.BackgroundColor3 = Color3.fromRGB(240, 210, 191)
-        return
-    end
     local count = 0
     for _, obj in ipairs(workspace:GetDescendants()) do
         if not painting then break end
@@ -349,13 +313,9 @@ local function paintAll()
             local ow = obj:FindFirstChild("Owner")
             local ok, val = pcall(function() return ow and ow.Value end)
             if ok and val == lp then
-                -- 根据蓝图名判断颜色
-                local colorName = obj.Name
-                if COLOR_MAP[colorName] then
-                    pcall(function() remote:FireServer(obj, colorName) end)
-                    count = count + 1
-                    task.wait(0.015)
-                end
+                pcall(function() PaintEvent:FireServer(obj, obj.Name) end)
+                count = count + 1
+                task.wait(0.015)
             end
         end
     end
@@ -364,7 +324,6 @@ local function paintAll()
     btnPaint.BackgroundColor3 = Color3.fromRGB(240, 210, 191)
 end
 
--- 按钮绑定
 local function bind(btn, fn)
     btn.MouseButton1Click:Connect(fn)
     btn.TouchTap:Connect(fn)
@@ -393,4 +352,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder v3] loaded.")
+print("[Sphere Builder v4] loaded.")
