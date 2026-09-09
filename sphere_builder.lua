@@ -1,4 +1,4 @@
--- Sphere Emoji Builder v8
+-- Sphere Emoji Builder v9
 local RS = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
@@ -13,6 +13,7 @@ local Event      = RS.PlaceStructure.ClientPlacedBlueprint
 local PaintEvent = RS.PlaceStructure.PaintTool
 
 pcall(function() CoreGui:FindFirstChild("SphereBuilderUI"):Destroy() end)
+pcall(function() lp.PlayerGui:FindFirstChild("SphereBuilderUI"):Destroy() end)
 
 local S = math.clamp(math.min(
     workspace.CurrentCamera.ViewportSize.X,
@@ -25,7 +26,17 @@ main.Name = "SphereBuilderUI"
 main.ResetOnSpawn = false
 main.IgnoreGuiInset = true
 main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-main.Parent = CoreGui
+
+local ok, err = pcall(function() main.Parent = CoreGui end)
+if not ok then
+    print("[SB] CoreGui failed:", err, "- trying PlayerGui")
+    local ok2, err2 = pcall(function() main.Parent = lp.PlayerGui end)
+    if not ok2 then
+        print("[SB] PlayerGui also failed:", err2)
+        return
+    end
+end
+print("[SB] UI parent:", main.Parent.Name)
 
 local FW, FH = px(240), px(230)
 local Frame = Instance.new("Frame")
@@ -55,7 +66,7 @@ local titleLbl = Instance.new("TextLabel")
 titleLbl.BackgroundTransparency = 1
 titleLbl.Position = UDim2.new(0, px(12), 0, px(6))
 titleLbl.Size = UDim2.new(0, px(180), 0, px(22))
-titleLbl.Text = "Sphere Builder v8"
+titleLbl.Text = "Sphere Builder v9"
 titleLbl.TextColor3 = Color3.fromRGB(145, 103, 134)
 titleLbl.Font = Enum.Font.GothamBold
 titleLbl.TextSize = px(13)
@@ -195,14 +206,6 @@ local building = false
 local painting = false
 local allData = nil
 
--- 颜色映射：数据里的 n 字段 -> LT2 颜色名
-local COLOR_MAP = {
-    Star        = "Star",
-    SpookyGhoul = "SpookyGhoul",
-    LoneCave    = "LoneCave",
-    Candy       = "Candy",
-}
-
 local function saveProgress(idx)
     pcall(function()
         if writefile then writefile(SAVE_KEY..".txt", tostring(idx)) end
@@ -240,7 +243,6 @@ local function loadData()
 
     local combined = {}
     for _, v in ipairs(mainData) do
-        -- 保留原始颜色名到 color 字段，蓝图名强制用 Floor1Tiny
         table.insert(combined, {
             n = "Floor1Tiny",
             color = v.n,
@@ -264,8 +266,6 @@ local function loadData()
     setStatus("Loaded " .. #combined .. " blocks")
     return combined
 end
-
-local placedModels = {}
 
 local function buildOne(entry)
     local cf = CFrame.new(
@@ -315,15 +315,11 @@ end
 
 local function paintAll()
     if painting then return end
-    if not allData then
-        setStatus("No data, run Start first")
-        return
-    end
+    if not allData then setStatus("Run Start first") return end
     painting = true
     btnPaint.BackgroundColor3 = Color3.fromRGB(200, 160, 130)
-    setStatus("Scanning for placed blocks...")
+    setStatus("Scanning blocks...")
 
-    -- 收集所有属于自己的 Model，按位置匹配颜色
     local myModels = {}
     for _, obj in ipairs(workspace:GetDescendants()) do
         if obj:IsA("Model") and obj.Name == "Floor1Tiny" then
@@ -331,8 +327,7 @@ local function paintAll()
             if ow and ow.Value == lp then
                 local primary = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
                 if primary then
-                    local pos = primary.Position
-                    table.insert(myModels, {obj=obj, pos=pos})
+                    table.insert(myModels, {obj=obj, pos=primary.Position})
                 end
             end
         end
@@ -342,7 +337,6 @@ local function paintAll()
     local count = 0
     for _, entry in ipairs(allData) do
         if not painting then break end
-        -- 找最近的 model
         local target = nil
         local bestDist = 2
         for _, m in ipairs(myModels) do
@@ -356,9 +350,7 @@ local function paintAll()
             end
         end
         if target and entry.color then
-            pcall(function()
-                PaintEvent:FireServer(target, entry.color)
-            end)
+            pcall(function() PaintEvent:FireServer(target, entry.color) end)
             count = count + 1
             task.wait(0.015)
         end
@@ -397,4 +389,4 @@ else
     setStatus("Ready")
 end
 
-print("[Sphere Builder v8] loaded.")
+print("[Sphere Builder v9] loaded. UI parent:", main.Parent.Name)
