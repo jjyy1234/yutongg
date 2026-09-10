@@ -21,22 +21,23 @@ local dataLoaded = false
 
 local function loadData()
     if dataLoaded then return allData end
+    allData = {}
     statusLabel.Text = "加载 body..."
-    local bodyData = loadstring(game:HttpGet(DATA_BASE .. "duck_body.lua"))()
+    for i = 1, 4 do
+        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_body_" .. i .. ".lua"))()
+        if chunk then for _, v in ipairs(chunk) do table.insert(allData, v) end end
+    end
     statusLabel.Text = "加载 head..."
-    local headData = loadstring(game:HttpGet(DATA_BASE .. "duck_head.lua"))()
+    for i = 1, 4 do
+        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_head_" .. i .. ".lua"))()
+        if chunk then for _, v in ipairs(chunk) do table.insert(allData, v) end end
+    end
     statusLabel.Text = "加载 beak..."
     local beakData = loadstring(game:HttpGet(DATA_BASE .. "duck_beak.lua"))()
+    if beakData then for _, v in ipairs(beakData) do table.insert(allData, v) end end
     statusLabel.Text = "加载 eyes..."
     local eyesData = loadstring(game:HttpGet(DATA_BASE .. "duck_eyes.lua"))()
-    allData = {}
-    for _, t in ipairs({bodyData, headData, beakData, eyesData}) do
-        if t then
-            for _, v in ipairs(t) do
-                table.insert(allData, v)
-            end
-        end
-    end
+    if eyesData then for _, v in ipairs(eyesData) do table.insert(allData, v) end end
     dataLoaded = true
     return allData
 end
