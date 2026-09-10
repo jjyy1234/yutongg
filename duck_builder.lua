@@ -1,50 +1,20 @@
--- ============================================================
 -- duck_builder.lua
--- 3D 空心橡皮鸭建造脚本
--- 数据从 GitHub 远程加载，断点续建
--- ============================================================
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-
 local lp = Players.LocalPlayer
 
 local placeEvent = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("ClientPlacedBlueprint")
 local paintRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("PaintTool")
 
 local DATA_BASE = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/"
+local N_BODY = 4
+local N_HEAD = 4
 
 local allData = nil
 local dataLoaded = false
 
-local function loadData()
-    if dataLoaded then return allData end
-    allData = {}
-    statusLabel.Text = "加载 body..."
-    for i = 1, 4 do
-        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_body_" .. i .. ".lua"))()
-        if chunk then for _, v in ipairs(chunk) do table.insert(allData, v) end end
-    end
-    statusLabel.Text = "加载 head..."
-    for i = 1, 4 do
-        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_head_" .. i .. ".lua"))()
-        if chunk then for _, v in ipairs(chunk) do table.insert(allData, v) end end
-    end
-    statusLabel.Text = "加载 beak..."
-    local beakData = loadstring(game:HttpGet(DATA_BASE .. "duck_beak.lua"))()
-    if beakData then for _, v in ipairs(beakData) do table.insert(allData, v) end end
-    statusLabel.Text = "加载 eyes..."
-    local eyesData = loadstring(game:HttpGet(DATA_BASE .. "duck_eyes.lua"))()
-    if eyesData then for _, v in ipairs(eyesData) do table.insert(allData, v) end end
-    dataLoaded = true
-    return allData
-end
-
-if not _G.DuckProgress then
-    _G.DuckProgress = 0
-end
+if not _G.DuckProgress then _G.DuckProgress = 0 end
 
 local building = false
 local painting = false
@@ -60,21 +30,15 @@ gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 gui.Parent = CoreGui
 
 local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
 frame.Size = UDim2.new(0, 320, 0, 300)
 frame.Position = UDim2.new(0.5, -160, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.BorderSizePixel = 0
 frame.Active = false
-frame.Draggable = false
 frame.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = frame
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
 
 local titleBar = Instance.new("TextLabel")
-titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 36)
 titleBar.Position = UDim2.new(0, 0, 0, 0)
 titleBar.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
@@ -84,14 +48,9 @@ titleBar.TextColor3 = Color3.fromRGB(30, 30, 35)
 titleBar.Font = Enum.Font.SourceSansBold
 titleBar.TextSize = 18
 titleBar.Parent = frame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 8)
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
-titleCorner.Parent = titleBar
-
-local dragging = false
-local dragStart, startPos
-
+local dragging, dragStart, startPos = false, nil, nil
 titleBar.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
@@ -102,7 +61,6 @@ titleBar.InputBegan:Connect(function(input)
         end)
     end
 end)
-
 titleBar.InputChanged:Connect(function(input)
     if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) and dragging then
         local delta = input.Position - dragStart
@@ -111,7 +69,6 @@ titleBar.InputChanged:Connect(function(input)
 end)
 
 local statusLabel = Instance.new("TextLabel")
-statusLabel.Name = "Status"
 statusLabel.Size = UDim2.new(1, -20, 0, 30)
 statusLabel.Position = UDim2.new(0, 10, 0, 46)
 statusLabel.BackgroundTransparency = 1
@@ -144,7 +101,7 @@ local function makeBtn(name, text, x, y, w, col)
     btn.Position = UDim2.new(0, x, 0, y)
     btn.BackgroundColor3 = col
     btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(255,255,255)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
     btn.Font = Enum.Font.SourceSansBold
     btn.TextSize = 15
     btn.BorderSizePixel = 0
@@ -154,12 +111,44 @@ local function makeBtn(name, text, x, y, w, col)
     return btn
 end
 
-local loadBtn  = makeBtn("LoadBtn",  "Load Data", 10, 106, 145, Color3.fromRGB(80,120,200))
-local startBtn = makeBtn("StartBtn", "Start",     165, 106, 145, Color3.fromRGB(80,200,120))
-local stopBtn  = makeBtn("StopBtn",  "Stop",      10,  154, 145, Color3.fromRGB(220,80,80))
-local resetBtn = makeBtn("ResetBtn", "Reset",     165, 154, 145, Color3.fromRGB(200,120,60))
-local paintBtn = makeBtn("PaintBtn", "Paint All", 10,  202, 145, Color3.fromRGB(160,100,200))
-local closeBtn = makeBtn("CloseBtn", "Close",     165, 202, 145, Color3.fromRGB(100,100,100))
+local loadBtn  = makeBtn("LoadBtn",  "Load Data", 10,  106, 145, Color3.fromRGB(80, 120, 200))
+local startBtn = makeBtn("StartBtn", "Start",     165, 106, 145, Color3.fromRGB(80, 200, 120))
+local stopBtn  = makeBtn("StopBtn",  "Stop",      10,  154, 145, Color3.fromRGB(220, 80, 80))
+local resetBtn = makeBtn("ResetBtn", "Reset",     165, 154, 145, Color3.fromRGB(200, 120, 60))
+local paintBtn = makeBtn("PaintBtn", "Paint All", 10,  202, 145, Color3.fromRGB(160, 100, 200))
+local closeBtn = makeBtn("CloseBtn", "Close",     165, 202, 145, Color3.fromRGB(100, 100, 100))
+
+-- loadData 在 UI 创建之后定义，statusLabel 已存在
+local function loadData()
+    if dataLoaded then return allData end
+    allData = {}
+    for i = 1, N_BODY do
+        statusLabel.Text = "加载 body " .. i .. "/" .. N_BODY .. "..."
+        local ok, chunk = pcall(function()
+            return loadstring(game:HttpGet(DATA_BASE .. "duck_body_" .. i .. ".lua"))()
+        end)
+        if ok and chunk then
+            for _, v in ipairs(chunk) do table.insert(allData, v) end
+        end
+    end
+    for i = 1, N_HEAD do
+        statusLabel.Text = "加载 head " .. i .. "/" .. N_HEAD .. "..."
+        local ok, chunk = pcall(function()
+            return loadstring(game:HttpGet(DATA_BASE .. "duck_head_" .. i .. ".lua"))()
+        end)
+        if ok and chunk then
+            for _, v in ipairs(chunk) do table.insert(allData, v) end
+        end
+    end
+    statusLabel.Text = "加载 beak..."
+    local ok1, beak = pcall(function() return loadstring(game:HttpGet(DATA_BASE .. "duck_beak.lua"))() end)
+    if ok1 and beak then for _, v in ipairs(beak) do table.insert(allData, v) end end
+    statusLabel.Text = "加载 eyes..."
+    local ok2, eyes = pcall(function() return loadstring(game:HttpGet(DATA_BASE .. "duck_eyes.lua"))() end)
+    if ok2 and eyes then for _, v in ipairs(eyes) do table.insert(allData, v) end end
+    dataLoaded = true
+    return allData
+end
 
 local function updateStatus()
     if not dataLoaded then
@@ -171,7 +160,7 @@ local function updateStatus()
     local done = _G.DuckProgress or 0
     statusLabel.Text = string.format("已建 %d / %d", done, total)
     if total > 0 then
-        progFill.Size = UDim2.new(math.clamp(done/total,0,1), 0, 1, 0)
+        progFill.Size = UDim2.new(math.clamp(done / total, 0, 1), 0, 1, 0)
     end
 end
 
@@ -255,10 +244,14 @@ local function paintAll()
 end
 
 loadBtn.MouseButton1Click:Connect(function()
-    statusLabel.Text = "加载中..."
-    local ok, err = pcall(loadData)
-    if ok then updateStatus()
-    else statusLabel.Text = "加载失败: " .. tostring(err):sub(1,50) end
+    task.spawn(function()
+        local ok, err = pcall(loadData)
+        if ok then
+            updateStatus()
+        else
+            statusLabel.Text = "加载失败: " .. tostring(err):sub(1, 60)
+        end
+    end)
 end)
 
 startBtn.MouseButton1Click:Connect(function() startBuild() end)
@@ -266,7 +259,8 @@ stopBtn.MouseButton1Click:Connect(function() stopBuild() end)
 resetBtn.MouseButton1Click:Connect(function() resetProgress() end)
 paintBtn.MouseButton1Click:Connect(function() paintAll() end)
 closeBtn.MouseButton1Click:Connect(function()
-    building = false painting = false
+    building = false
+    painting = false
     if buildThread then task.cancel(buildThread) end
     if paintThread then task.cancel(paintThread) end
     gui:Destroy()
@@ -280,4 +274,4 @@ task.spawn(function()
     end
 end)
 
-print("Duck Builder loaded. Click Load Data then Start.")
+print("Duck Builder loaded.")
