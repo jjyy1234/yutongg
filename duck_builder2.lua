@@ -8,8 +8,8 @@ local placeEvent = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild
 local paintRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("PaintTool")
 
 local DATA_BASE = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/"
-local N_BODY = 4
-local N_HEAD = 4
+local N_BODY = 28
+local N_HEAD = 3
 
 local allData = nil
 local dataLoaded = false
