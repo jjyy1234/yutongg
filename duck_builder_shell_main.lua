@@ -1,15 +1,7 @@
 --[[
-  Duck Builder 薄壳主文件
-  数据请上传到你的 GitHub，再改下面 DATA_BASE
-
-  推荐上传（轻量）：
-    shell_lite_1.lua ~ shell_lite_5.lua   → 约 16928 块（2 倍格距表面）
-  完整 1 格壳（仍较多）：
-    shell_1.lua ~ shell_18.lua           → 约 68382 块
-
-  为什么 1 格壳还有好几万？
-  鸭子外表面积大（约 33×121×78 外形），表面每一格都是一块，
-  不是「厚度」问题，是「表面积」问题。
+  Duck Builder thin-shell (compact stride2 ~8342 blocks)
+  Data: https://raw.githubusercontent.com/jjyy1234/yutongg/main/duck_shell/
+  Files: s_1.lua ... s_17.lua
 ]]
 
 local Players = game:GetService("Players")
@@ -20,13 +12,8 @@ local lp = Players.LocalPlayer
 local placeEvent = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("ClientPlacedBlueprint")
 local paintRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("PaintTool")
 
--- ★ 改成你上传后的 raw 目录（末尾要有 /）
 local DATA_BASE = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/duck_shell/"
-
--- lite = 约 1.7 万块；full = 约 6.8 万块
-local USE_LITE = true
-local LITE_FILES = 5
-local FULL_FILES = 18
+local N_FILES = 17
 
 if not _G.DuckProgress then _G.DuckProgress = 0 end
 
@@ -56,7 +43,7 @@ local titleBar = Instance.new("TextLabel")
 titleBar.Size = UDim2.new(1, 0, 0, 36)
 titleBar.BackgroundColor3 = Color3.fromRGB(255, 180, 60)
 titleBar.BorderSizePixel = 0
-titleBar.Text = "Duck 薄壳 · GitHub"
+titleBar.Text = "Duck Shell ~8k"
 titleBar.TextColor3 = Color3.fromRGB(30, 30, 35)
 titleBar.Font = Enum.Font.SourceSansBold
 titleBar.TextSize = 18
@@ -85,7 +72,7 @@ local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 36)
 statusLabel.Position = UDim2.new(0, 10, 0, 44)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = USE_LITE and "轻量薄壳 ~1.7万块\n点 Load Data" or "完整薄壳 ~6.8万块\n点 Load Data"
+statusLabel.Text = "Shell ~8342 blocks\nClick Load Data"
 statusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 statusLabel.Font = Enum.Font.SourceSans
 statusLabel.TextSize = 14
@@ -129,29 +116,47 @@ local resetBtn = makeBtn("Reset",     165, 160, 145, Color3.fromRGB(200, 120, 60
 local paintBtn = makeBtn("Paint All", 10,  208, 145, Color3.fromRGB(160, 100, 200))
 local closeBtn = makeBtn("Close",     165, 208, 145, Color3.fromRGB(100, 100, 100))
 
+local function expandChunk(chunk)
+	local out = {}
+	for _, v in ipairs(chunk) do
+		if type(v) == "table" then
+			if v.n and v.x then
+				table.insert(out, v)
+			elseif v[1] and v[2] and v[3] then
+				table.insert(out, {
+					n = "Floor1Tiny",
+					x = v[1],
+					y = v[2],
+					z = v[3],
+					color = v[4] or "Candy",
+				})
+			end
+		end
+	end
+	return out
+end
+
 local function loadData()
 	if dataLoaded and shellData then return shellData end
 	shellData = {}
-	local prefix = USE_LITE and "shell_lite_" or "shell_"
-	local nFiles = USE_LITE and LITE_FILES or FULL_FILES
-	for i = 1, nFiles do
-		statusLabel.Text = string.format("加载 %s%d / %d ...", prefix, i, nFiles)
-		local url = DATA_BASE .. prefix .. i .. ".lua"
+	for i = 1, N_FILES do
+		statusLabel.Text = string.format("Loading s_%d / %d ...", i, N_FILES)
+		local url = DATA_BASE .. "s_" .. i .. ".lua"
 		local ok, chunk = pcall(function()
 			return loadstring(game:HttpGet(url))()
 		end)
 		if ok and type(chunk) == "table" then
-			for _, v in ipairs(chunk) do
+			for _, v in ipairs(expandChunk(chunk)) do
 				table.insert(shellData, v)
 			end
 		else
-			statusLabel.Text = "加载失败: " .. prefix .. i
+			statusLabel.Text = "Fail: s_" .. i
 			warn("[DuckShell] fail", url, chunk)
 			return nil
 		end
 	end
 	dataLoaded = true
-	statusLabel.Text = string.format("薄壳就绪：%d 块", #shellData)
+	statusLabel.Text = string.format("Ready: %d blocks", #shellData)
 	print("[DuckShell] loaded", #shellData)
 	return shellData
 end
@@ -160,7 +165,7 @@ local function updateStatus()
 	if not dataLoaded or not shellData then return end
 	local total = #shellData
 	local done = _G.DuckProgress or 0
-	statusLabel.Text = string.format("已建 %d / %d", done, total)
+	statusLabel.Text = string.format("Built %d / %d", done, total)
 	if total > 0 then
 		progFill.Size = UDim2.new(math.clamp(done / total, 0, 1), 0, 1, 0)
 	end
@@ -168,7 +173,7 @@ end
 
 local function startBuild()
 	if not dataLoaded or not shellData then
-		statusLabel.Text = "请先 Load Data"
+		statusLabel.Text = "Load Data first"
 		return
 	end
 	if building then return end
@@ -179,12 +184,7 @@ local function startBuild()
 		for i = startIdx, total do
 			if not building then break end
 			local v = shellData[i]
-			local cf = CFrame.new(
-				v.x, v.y, v.z,
-				v.r00 or 1, v.r01 or 0, v.r02 or 0,
-				v.r10 or 0, v.r11 or 1, v.r12 or 0,
-				v.r20 or 0, v.r21 or 0, v.r22 or 1
-			)
+			local cf = CFrame.new(v.x, v.y, v.z)
 			pcall(function()
 				placeEvent:FireServer(v.n or "Floor1Tiny", cf, lp)
 			end)
@@ -195,7 +195,7 @@ local function startBuild()
 		building = false
 		updateStatus()
 		if (_G.DuckProgress or 0) >= total then
-			statusLabel.Text = string.format("完成！%d 块", total)
+			statusLabel.Text = string.format("Done! %d blocks", total)
 		end
 	end)
 end
@@ -210,12 +210,12 @@ local function resetProgress()
 	stopBuild()
 	_G.DuckProgress = 0
 	updateStatus()
-	statusLabel.Text = dataLoaded and string.format("已重置，共 %d 块", #shellData) or "未加载"
+	statusLabel.Text = dataLoaded and string.format("Reset, total %d", #shellData) or "Not loaded"
 end
 
 local function paintAll()
 	if not dataLoaded or not shellData then
-		statusLabel.Text = "请先 Load Data"
+		statusLabel.Text = "Load Data first"
 		return
 	end
 	if painting then return end
@@ -237,7 +237,7 @@ local function paintAll()
 						pcall(function() paintRemote:FireServer(obj, color) end)
 						painted = painted + 1
 						if painted % 40 == 0 then
-							statusLabel.Text = "喷漆 " .. painted
+							statusLabel.Text = "Paint " .. painted
 							task.wait(0.01)
 						end
 					end
@@ -245,7 +245,7 @@ local function paintAll()
 			end
 		end
 		painting = false
-		statusLabel.Text = "喷漆完成 " .. painted
+		statusLabel.Text = "Paint done " .. painted
 	end)
 end
 
@@ -254,7 +254,7 @@ loadBtn.MouseButton1Click:Connect(function()
 		_G.DuckProgress = 0
 		local ok, err = pcall(loadData)
 		if not ok then
-			statusLabel.Text = "错误: " .. tostring(err):sub(1, 50)
+			statusLabel.Text = "Error: " .. tostring(err):sub(1, 50)
 		else
 			updateStatus()
 		end
@@ -272,4 +272,4 @@ closeBtn.MouseButton1Click:Connect(function()
 	gui:Destroy()
 end)
 
-print("[DuckShell] main ready | USE_LITE=", USE_LITE)
+print("[DuckShell] compact main ready N_FILES=", N_FILES)
