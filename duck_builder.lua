@@ -23,18 +23,29 @@ local DATA_BASE = "https://raw.githubusercontent.com/jjyy1234/yutongg/main/"
 local allData = nil
 local dataLoaded = false
 
-local function loadData()
+-- 分块数量
+local N_BODY = 4  -- duck_body 分成 4 块
+local N_HEAD = 3  -- duck_head 分成 3 块
+
+local function loadAllData()
     if dataLoaded then return allData end
-    local bodyData = loadstring(game:HttpGet(DATA_BASE .. "duck_body.lua"))()
-    local headData = loadstring(game:HttpGet(DATA_BASE .. "duck_head.lua"))()
-    local beakData = loadstring(game:HttpGet(DATA_BASE .. "duck_beak.lua"))()
-    local eyesData = loadstring(game:HttpGet(DATA_BASE .. "duck_eyes.lua"))()
     allData = {}
-    for _, t in ipairs({bodyData, headData, beakData, eyesData}) do
-        for _, v in ipairs(t) do
-            table.insert(allData, v)
-        end
+    -- body 分块
+    for i = 1, N_BODY do
+        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_body_" .. i .. ".lua"))()
+        for _, v in ipairs(chunk) do table.insert(allData, v) end
     end
+    -- head 分块
+    for i = 1, N_HEAD do
+        local chunk = loadstring(game:HttpGet(DATA_BASE .. "duck_head_" .. i .. ".lua"))()
+        for _, v in ipairs(chunk) do table.insert(allData, v) end
+    end
+    -- beak
+    local beakData = loadstring(game:HttpGet(DATA_BASE .. "duck_beak.lua"))()
+    for _, v in ipairs(beakData) do table.insert(allData, v) end
+    -- eyes
+    local eyesData = loadstring(game:HttpGet(DATA_BASE .. "duck_eyes.lua"))()
+    for _, v in ipairs(eyesData) do table.insert(allData, v) end
     dataLoaded = true
     return allData
 end
@@ -398,7 +409,7 @@ end
 loadBtn.MouseButton1Click:Connect(function()
     statusLabel.Text = "加载中..."
     local ok, err = pcall(function()
-        loadData()
+        loadAllData()
     end)
     if ok then
         updateStatus()
