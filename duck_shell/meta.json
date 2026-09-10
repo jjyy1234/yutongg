@@ -1,0 +1,33 @@
+{
+  "solid": 209149,
+  "shell": 68382,
+  "shell_stride2": 8342,
+  "shell_coarse2x": 16928,
+  "shell_files": [
+    "shell_1.lua",
+    "shell_2.lua",
+    "shell_3.lua",
+    "shell_4.lua",
+    "shell_5.lua",
+    "shell_6.lua",
+    "shell_7.lua",
+    "shell_8.lua",
+    "shell_9.lua",
+    "shell_10.lua",
+    "shell_11.lua",
+    "shell_12.lua",
+    "shell_13.lua",
+    "shell_14.lua",
+    "shell_15.lua",
+    "shell_16.lua",
+    "shell_17.lua",
+    "shell_18.lua"
+  ],
+  "shell_lite_files": [
+    "shell_lite_1.lua",
+    "shell_lite_2.lua",
+    "shell_lite_3.lua",
+    "shell_lite_4.lua",
+    "shell_lite_5.lua"
+  ]
+}
