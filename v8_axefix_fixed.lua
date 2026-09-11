@@ -1086,7 +1086,14 @@ local function createToggle(parent, positionX, positionY, initialState, onToggle
 	}
 end
 
-local homePage = pages[1]
+local homePage
+local RestoreCollisions
+local selfGlowLight
+local copyJobIdBtn
+local jobIdBox
+local joinJobBtn
+do
+homePage = pages[1]
 
 local function createSlider(parent, label, minVal, maxVal, defaultVal, positionY, trackWidth)
 	trackWidth = trackWidth or px(145)
@@ -1258,7 +1265,7 @@ noclipLabel.TextSize = px(8)
 noclipLabel.TextXAlignment = Enum.TextXAlignment.Left
 noclipLabel.TextYAlignment = Enum.TextYAlignment.Center
 
-local function RestoreCollisions()
+RestoreCollisions = function()
 	local character = speaker.Character
 	if character then
 		for _, part in ipairs(character:GetDescendants()) do
@@ -1323,7 +1330,7 @@ glowLabel.TextSize = px(8)
 glowLabel.TextXAlignment = Enum.TextXAlignment.Left
 glowLabel.TextYAlignment = Enum.TextYAlignment.Center
 
-local selfGlowLight = nil
+selfGlowLight = nil
 local glowToggle = createToggle(glowBar, TOGGLE_X, px(2), false, function(on)
 	_G.SelfGlow = on
 	local character = speaker.Character
@@ -1493,7 +1500,7 @@ hopServerBtn.TextSize = px(9)
 hopServerBtn.AutoButtonColor = false
 Instance.new("UICorner", hopServerBtn).CornerRadius = UDim.new(0, px(4))
 
-local copyJobIdBtn = Instance.new("TextButton")
+copyJobIdBtn = Instance.new("TextButton")
 copyJobIdBtn.Parent = homePage
 copyJobIdBtn.Size = UDim2.new(1, -px(10), 0, px(18))
 copyJobIdBtn.Position = UDim2.new(0, px(5), 0, px(284))
@@ -1506,7 +1513,7 @@ copyJobIdBtn.TextSize = px(9)
 copyJobIdBtn.AutoButtonColor = false
 Instance.new("UICorner", copyJobIdBtn).CornerRadius = UDim.new(0, px(4))
 
-local jobIdBox = Instance.new("TextBox")
+jobIdBox = Instance.new("TextBox")
 jobIdBox.Parent = homePage
 jobIdBox.Size = UDim2.new(0.62, -px(6), 0, px(18))
 jobIdBox.Position = UDim2.new(0, px(5), 0, px(304))
@@ -1520,7 +1527,7 @@ jobIdBox.TextSize = px(8)
 jobIdBox.ClearTextOnFocus = false
 Instance.new("UICorner", jobIdBox).CornerRadius = UDim.new(0, px(4))
 
-local joinJobBtn = Instance.new("TextButton")
+joinJobBtn = Instance.new("TextButton")
 joinJobBtn.Parent = homePage
 joinJobBtn.Size = UDim2.new(0.38, -px(8), 0, px(18))
 joinJobBtn.Position = UDim2.new(0.62, 0, 0, px(304))
@@ -1636,6 +1643,7 @@ end
 hopServerBtn.MouseButton1Click:Connect(function()
 	task.spawn(hopLowestServer)
 end)
+end
 
 copyJobIdBtn.MouseButton1Click:Connect(function()
 	local id = tostring(game.JobId)
@@ -2123,6 +2131,7 @@ _nightHeartbeatConn = RunService.Heartbeat:Connect(function()
 	_wasNight = night
 end)
 
+do
 local flyPage = pages[2]
 
 local flyToggle = Instance.new("TextButton")
@@ -2325,7 +2334,10 @@ lavaButton.MouseButton1Click:Connect(function()
 		lavaButton.BackgroundColor3 = Color3.fromRGB(170, 220, 191)
 	end
 end)
+end
 
+local itemBtn
+do
 local teleportPage = pages[3]
 
 local function findMyPropertyPosition()
@@ -2441,7 +2453,7 @@ listLayout.Padding = UDim.new(0, 1)
 listLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 for i, loc in ipairs(teleportLocations) do
-	local itemBtn = Instance.new("TextButton")
+	itemBtn = Instance.new("TextButton")
 	itemBtn.Name = "Item_" .. i
 	itemBtn.Parent = dropdownList
 	itemBtn.Size = UDim2.new(1, 0, 0, 16)
@@ -2837,11 +2849,23 @@ Mouse.Button1Down:Connect(function()
 		end
 	end)
 end)
+end
 
 
 
 
-local otherPage = pages[6]
+local otherPage
+local identifyMaterials
+local BTN_H
+local BTN_GAP
+local currentY
+local createOtherBtn
+local teleportOneItem
+local findOwnedItem
+local findUnownedItem
+local findUnownedDuckAngel
+do
+otherPage = pages[6]
 
 local materialCode = {
 	["老虎眼睛"] = "... . .",
@@ -2864,7 +2888,7 @@ for mat, code in pairs(materialCode) do
 	table.insert(codeToMaterial[code], mat)
 end
 
-local function identifyMaterials()
+identifyMaterials = function()
 	local result = {}
 	local texts = {}
 	local stoneParts = Workspace:FindFirstChild("Stores") and Workspace.Stores:FindFirstChild("StoneRUs") and Workspace.Stores.StoneRUs:FindFirstChild("Parts")
@@ -2894,11 +2918,11 @@ local function identifyMaterials()
 	return result
 end
 
-local BTN_H = px(18)
-local BTN_GAP = px(4)
-local currentY = px(2)
+BTN_H = px(18)
+BTN_GAP = px(4)
+currentY = px(2)
 
-local function createOtherBtn(name, text, color, textColor)
+createOtherBtn = function(name, text, color, textColor)
 	local btn = Instance.new("TextButton")
 	btn.Name = name
 	btn.Parent = otherPage
@@ -2934,7 +2958,7 @@ task.spawn(updateMaterialDisplay)
 
 -- 统一拖拽传送（自动购买 / 选择传送 / 合成 共用）
 -- ClientIsDragging 旧格式拖拽（与天堂鸭一致）
-local function teleportOneItem(item, targetPos)
+teleportOneItem = function(item, targetPos)
 	local character = speaker.Character
 	local hrp = character and character:FindFirstChild("HumanoidRootPart")
 	if not hrp or not item or not item.Parent then return false end
@@ -2984,7 +3008,7 @@ local function teleportOneItem(item, targetPos)
 	return true
 end
 
-local function findOwnedItem(name)
+findOwnedItem = function(name)
 	for _, obj in ipairs(Workspace:GetDescendants()) do
 		if obj:IsA("Model") and obj.Name == name and isOwnedByMe(obj) then
 			return obj
@@ -2993,7 +3017,7 @@ local function findOwnedItem(name)
 	return nil
 end
 
-local function findUnownedItem(name)
+findUnownedItem = function(name)
 	for _, obj in ipairs(Workspace:GetDescendants()) do
 		if obj:IsA("Model") and obj.Name == name and isUnowned(obj) then
 			return obj
@@ -3002,11 +3026,19 @@ local function findUnownedItem(name)
 	return nil
 end
 
-local function findUnownedDuckAngel()
+findUnownedDuckAngel = function()
 	return findUnownedItem("DuckAngel")
 end
 
 
+end
+local getStoreCounter
+local shopCatalog
+local selectedShopIndex
+local selectedProductIndex
+local buyQuantity
+local scanAllShops
+do
 -- ===================== 购买页：下拉选项 + 自动购买 =====================
 local WOODRUS_COUNTER = Vector3.new(268.0, 8.2, 67.4)
 
@@ -3035,14 +3067,14 @@ local STORE_COUNTER = {
     ["WoodRUs"]         = Vector3.new(268.0, 8.2, 67.4),
 }
 
-local function getStoreCounter(storeName)
+getStoreCounter = function(storeName)
     return STORE_COUNTER[storeName] or WOODRUS_COUNTER
 end
 
-local shopCatalog = {}
-local selectedShopIndex = 1
-local selectedProductIndex = 1
-local buyQuantity = 1
+shopCatalog = {}
+selectedShopIndex = 1
+selectedProductIndex = 1
+buyQuantity = 1
 
 local function getModelPos(model)
 	if not model then return nil end
@@ -3104,7 +3136,7 @@ local function productDisplayName(name)
 	return name
 end
 
-local function scanAllShops()
+scanAllShops = function()
 	shopCatalog = {}
 	local storesFolder = Workspace:FindFirstChild("Stores")
 	if not storesFolder then
@@ -3206,6 +3238,7 @@ local function scanAllShops()
 	table.sort(shopCatalog, function(a, b) return a.name < b.name end)
 	print("[Yutong] 扫描完成 店=", #shopCatalog)
 	return shopCatalog
+end
 end
 
 task.spawn(function()
@@ -5180,6 +5213,7 @@ end)
 
 
 end
+do
 -- ===================== 调试页 =====================
 task.spawn(function()
 	local ok, err = pcall(function()
@@ -5564,10 +5598,26 @@ pcall(function()
 	main.Enabled = true
 end)
 pcall(function() notify("Yutong 已加载", "success") end)
+end
+local bai
+local lp
+local tp
+local getPosition
+local getMouseTarget
+local getBestAxe
+local cutPart
+local bringTree
+local autofarm
+local getPlanks
+local sellwood
+local PlankToBlueprint
+local lumbsmasher_legitpaint
+local shuaxinlb
+do
 -- ===== [移植自青脚本] 木头功能 开始 =====
 
 -- 木头功能状态表
-local bai = {
+bai = {
     cuttreeselect = "Generic",
     autofarm = false,
     autofarm1 = false,
@@ -5625,7 +5675,7 @@ local bai = {
     wood = 7,
 }
 
-local lp = speaker
+lp = speaker
 local mouse = Mouse
 
 -- 木头功能所需工具函数
@@ -5707,7 +5757,7 @@ local function getCFrame(part)
     return part.CFrame
 end
 
-local function tp(pos)
+tp = function(pos)
     local pos = pos or Mouse.Hit + Vector3.new(0, speaker.Character.HumanoidRootPart.Size.Y, 0)
     if typeof(pos) == "CFrame" then
         speaker.Character:SetPrimaryPartCFrame(pos)
@@ -5716,11 +5766,11 @@ local function tp(pos)
     end
 end
 
-local function getPosition(part)
+getPosition = function(part)
     return getCFrame(part).Position
 end
 
-local function getMouseTarget()
+getMouseTarget = function()
     local b2 = UserInputService:GetMouseLocation()
     return workspace:FindPartOnRayWithIgnoreList(Ray.new(workspace.CurrentCamera.CFrame.p,
         workspace.CurrentCamera:ViewportPointToRay(b2.x, b2.y, 0).Direction * 1000),
@@ -5934,7 +5984,7 @@ local getTool = function()
     return speaker.Character:FindFirstChild("Tool") or speaker.Backpack:FindFirstChild("Tool")
 end
 
-local function getBestAxe(treeClass)
+getBestAxe = function(treeClass)
     local tools = getTools()
     if #tools == 0 then
         -- 背包没斧头，fallback 用剑
@@ -5957,7 +6007,7 @@ local function getBestAxe(treeClass)
     return true, tool or toolStats[1].tool
 end
 
-local function cutPart(event, section, height, tool, treeClass, cachedStats)
+cutPart = function(event, section, height, tool, treeClass, cachedStats)
     if not tool then
         notify("No axe equipped", "warn")
         return
@@ -6019,7 +6069,7 @@ local getBiggestTree = function(treeClass)
     return false
 end
 
-local function bringTree(treeClass)
+bringTree = function(treeClass)
     local success, data = getBestAxe(treeClass)
     if not success or not data then return end
 
@@ -6144,7 +6194,7 @@ local function bringTree(treeClass)
     notify("Tree brought back!", "success")
     bai.bringtree = false
 end
-local function autofarm(treeClass)
+autofarm = function(treeClass)
     local oldpos = speaker.Character.HumanoidRootPart.CFrame
     local success, data = getBestAxe(treeClass)
     if not success or not data then return end
@@ -6179,7 +6229,7 @@ local function autofarm(treeClass)
     tp(oldpos)
 end
 
-local function getPlanks()
+getPlanks = function()
     local plankList = {};
     for _, plank in next, Workspace.PlayerModels:GetChildren() do
         if plank:FindFirstChild('WoodSection') and plank:FindFirstChild('Owner') and plank.Owner.Value ==
@@ -6190,7 +6240,7 @@ local function getPlanks()
     return plankList;
 end
 
-local function sellwood()
+sellwood = function()
     local oldpos = speaker.Character.HumanoidRootPart.CFrame
     for i, v in next, Workspace.LogModels:GetChildren() do
         if v:FindFirstChild("Owner") and v.Owner.Value == speaker then
@@ -6230,7 +6280,7 @@ local function sellwood()
     tp(oldpos)
 end
 
-local function PlankToBlueprint()
+PlankToBlueprint = function()
     local target;
     notify("选择一个木头和蓝图", "info")
     bai.PlankToBlueprint = Mouse.Button1Down:Connect(function()
@@ -6265,7 +6315,7 @@ local function PlankToBlueprint()
     bai.plankModel = nil
 end
 
-local function lumbsmasher_legitpaint(wood_class, blueprint, tpback)
+lumbsmasher_legitpaint = function(wood_class, blueprint, tpback)
     local old = speaker.Character.HumanoidRootPart.CFrame
     local remote = ReplicatedStorage.PlaceStructure.ClientPlacedStructure
     local bp_type = blueprint.ItemName.Value
@@ -6430,7 +6480,7 @@ local function lumbsmasher_legitpaint(wood_class, blueprint, tpback)
     if tpback then tp(old); notify("完成", "success") end
 end
 
-local function shuaxinlb(zji)
+shuaxinlb = function(zji)
     bai.dropdown = {}
     if zji == true then
         for p, I in next, game.Players:GetChildren() do table.insert(bai.dropdown, I.Name) end
@@ -6440,6 +6490,8 @@ local function shuaxinlb(zji)
         end
     end
 end
+end
+do
 shuaxinlb(true)
 
 -- 木头功能 UI 页面
@@ -7536,6 +7588,7 @@ woodBtn("开始整理", Color3.fromRGB(191, 226, 205), Color3.fromRGB(72, 108, 8
 end)
 
 -- ===== [移植自青脚本] 木头功能 结束 =====
+end
 
 -- ===== [移植自 pink_car_farmer] 刷粉车功能 =====
 
