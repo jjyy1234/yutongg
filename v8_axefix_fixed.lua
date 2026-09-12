@@ -9,17 +9,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 local TeleportService = game:GetService("TeleportService")
 
--- 授权用户检测（最先执行）
-local AUTHORIZED_USERS = {
-	["gccgbxfnb0"] = true,
-      ["hxa1010"] = true,
-	["gccgbxfnb4"] = true,
-	["gccgbxfnb3"] = true,
-	["xiguayyds"] = true,
-     ["xiaojun1221"] = true,
-	["X8jone"] = true,
-
-}
+-- 授权用户检测（从 GitHub whitelist.txt 加载）
+local AUTHORIZED_USERS = {}
+do
+    local ok, result = pcall(function()
+        return game:HttpGet("https://raw.githubusercontent.com/jjyy1234/yutongg/main/whitelist.txt", true)
+    end)
+    if ok and result then
+        for name in result:gmatch("[^\r\n]+") do
+            name = name:match("^%s*(.-)%s*$")
+            if #name > 0 then
+                AUTHORIZED_USERS[name] = true
+            end
+        end
+    end
+end
 local _authPlayer = Players.LocalPlayer
 if not AUTHORIZED_USERS[_authPlayer.Name] then
 	_authPlayer:Kick("非授权用户")
