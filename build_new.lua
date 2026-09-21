@@ -1,7 +1,7 @@
 -- YUTONG-AutoBuild by YUTONGG
 -- Uses ClientPlacedBlueprint to auto-build from blueprint data
 -- Building data loaded from GitHub via HttpGet
--- v2: added Fill (Floor1Tiny ground fill) and Paint (PaintTool) functions
+-- v3: concurrent packet sending (task.spawn), Fill replaced with Build+Paint
 
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
@@ -186,8 +186,8 @@ end
 -- Build button (full width)
 local buildBtn = makeBtn("Build", 88)
 
--- Fill button + range input
-local fillBtn, fillBox = makeBtnWithInput("Fill", "Range", "10", 126)
+-- Build+Paint button (full width, no range input needed)
+local buildPaintBtn = makeBtn("Build+Paint", 126)
 
 -- Paint button + color input
 local paintBtn, paintBox = makeBtnWithInput("Paint", "Color", "LoneCave", 164)
@@ -197,7 +197,7 @@ local stopBtn = makeBtn("Stop", 202)
 
 local running = false
 
--- Build: place all blueprint data blocks
+-- Build: place all blueprint data blocks (concurrent)
 buildBtn.MouseButton1Click:Connect(function()
 	if running then
 		notify("YUTONG", "Already running, press Stop first", 2)
@@ -211,15 +211,16 @@ buildBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
 		for i, d in ipairs(DATA) do
 			if not running then break end
-			pcall(function()
-				placeRemote:FireServer(d.n, CFrame.new(d.x, d.y, d.z,
-					d.r00, d.r01, d.r02,
-					d.r10, d.r11, d.r12,
-					d.r20, d.r21, d.r22), lp)
+			task.spawn(function()
+				pcall(function()
+					placeRemote:FireServer(d.n, CFrame.new(d.x, d.y, d.z,
+						d.r00, d.r01, d.r02,
+						d.r10, d.r11, d.r12,
+						d.r20, d.r21, d.r22), lp)
+				end)
 			end)
 			cnt = cnt + 1
 			progressLbl.Text = "Progress: " .. cnt .. "/" .. dataCount
-			task.wait(0.01)
 		end
 		statusLbl.Text = running and ("Done! " .. cnt .. "/" .. dataCount) or "Stopped at " .. cnt .. "/" .. dataCount
 		if running then
@@ -230,58 +231,92 @@ buildBtn.MouseButton1Click:Connect(function()
 	end)
 end)
 
--- Fill: place Floor1Tiny in a grid centered on player position
-fillBtn.MouseButton1Click:Connect(function()
+-- Build+Paint: build all blueprint data blocks, then paint them (concurrent)
+buildPaintBtn.MouseButton1Click:Connect(function()
 	if running then
 		notify("YUTONG", "Already running, press Stop first", 2)
 		return
 	end
-	local range = tonumber(fillBox.Text) or 10
-	if range < 1 then range = 1 end
-	if range > 200 then range = 200 end
-	local total = range * range
 	running = true
-	fillBtn.Text = "Filling..."
-	statusLbl.Text = "Filling " .. total .. " blocks..."
-	notify("YUTONG", "Fill started: " .. total .. " Floor1Tiny", 3)
+	buildPaintBtn.Text = "Build+Paint..."
+	statusLbl.Text = "Building..."
+	notify("YUTONG", "Build+Paint started: " .. dataCount .. " blocks", 3)
 	local cnt = 0
 	task.spawn(function()
-		local char = lp.Character
-		if not char or not char:FindFirstChild("HumanoidRootPart") then
-			notify("YUTONG", "Character not found", 3)
-			fillBtn.Text = "Fill"
+		-- Phase 1: build all blocks concurrently
+		for i, d in ipairs(DATA) do
+			if not running then break end
+			task.spawn(function()
+				pcall(function()
+					placeRemote:FireServer(d.n, CFrame.new(d.x, d.y, d.z,
+						d.r00, d.r01, d.r02,
+						d.r10, d.r11, d.r12,
+						d.r20, d.r21, d.r22), lp)
+				end)
+			end)
+			cnt = cnt + 1
+			progressLbl.Text = "Progress: " .. cnt .. "/" .. dataCount
+		end
+		if not running then
+			statusLbl.Text = "Stopped at " .. cnt .. "/" .. dataCount
+			buildPaintBtn.Text = "Build+Paint"
 			running = false
 			return
 		end
-		local pos = char.HumanoidRootPart.Position
-		local cx = math.floor(pos.X / 2 + 0.5) * 2
-		local cz = math.floor(pos.Z / 2 + 0.5) * 2
-		local half = math.floor(range / 2)
-		for ix = -half, range - half - 1 do
-			for iz = -half, range - half - 1 do
-				if not running then break end
-				local x = cx + ix * 2
-				local z = cz + iz * 2
-				pcall(function()
-					placeRemote:FireServer("Floor1Tiny",
-						CFrame.new(x, 0.2, z, 1, 0, 0, 0, 1, 0, 0, 0, 1), lp)
-				end)
-				cnt = cnt + 1
-				progressLbl.Text = "Progress: " .. cnt .. "/" .. total
-				task.wait(0.01)
+		-- wait for server to create models
+		statusLbl.Text = "Waiting for server..."
+		task.wait(1)
+		if not running then
+			statusLbl.Text = "Stopped"
+			buildPaintBtn.Text = "Build+Paint"
+			running = false
+			return
+		end
+		-- Phase 2: scan workspace for Owner == lp models and paint concurrently
+		statusLbl.Text = "Painting..."
+		local playerModels = workspace:FindFirstChild("PlayerModels")
+		if not playerModels then
+			playerModels = workspace
+		end
+		local targets = {}
+		for _, obj in ipairs(playerModels:GetChildren()) do
+			if obj:IsA("Model") then
+				local owner = obj:FindFirstChild("Owner")
+				if owner and owner:IsA("ObjectValue") and owner.Value == lp then
+					table.insert(targets, obj)
+				end
 			end
+		end
+		local paintCnt = 0
+		local paintTotal = #targets
+		progressLbl.Text = "Paint: 0/" .. paintTotal
+		for i, model in ipairs(targets) do
 			if not running then break end
+			task.spawn(function()
+				local primary = model.PrimaryPart
+				if primary then
+					local pos = primary.Position
+					local nearestWood = findNearestWood(pos.X, pos.Y, pos.Z)
+					if nearestWood then
+						pcall(function()
+							paintRemote:FireServer(model, nearestWood)
+						end)
+					end
+				end
+			end)
+			paintCnt = paintCnt + 1
+			progressLbl.Text = "Paint: " .. paintCnt .. "/" .. paintTotal
 		end
-		statusLbl.Text = running and ("Fill done! " .. cnt .. "/" .. total) or "Stopped at " .. cnt .. "/" .. total
+		statusLbl.Text = running and ("Done! Build " .. cnt .. ", Paint " .. paintCnt) or "Stopped"
 		if running then
-			notify("YUTONG", "Fill complete: " .. cnt .. " blocks", 4)
+			notify("YUTONG", "Build+Paint complete: " .. cnt .. " built, " .. paintCnt .. " painted", 4)
 		end
-		fillBtn.Text = "Fill"
+		buildPaintBtn.Text = "Build+Paint"
 		running = false
 	end)
 end)
 
--- Paint: scan workspace for models owned by lp and paint them
+-- Paint: scan workspace for models owned by lp and paint them (concurrent)
 paintBtn.MouseButton1Click:Connect(function()
 	if running then
 		notify("YUTONG", "Already running, press Stop first", 2)
@@ -295,7 +330,6 @@ paintBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
 		local playerModels = workspace:FindFirstChild("PlayerModels")
 		if not playerModels then
-			-- fallback: scan all workspace children
 			playerModels = workspace
 		end
 		-- collect all models with Owner == lp
@@ -317,22 +351,23 @@ paintBtn.MouseButton1Click:Connect(function()
 		end
 		for i, model in ipairs(targets) do
 			if not running then break end
-			-- determine color: try nearest data entry's wood, fallback to input box
-			local colorName = defaultColor
-			local primary = model.PrimaryPart
-			if primary then
-				local pos = primary.Position
-				local nearestWood = findNearestWood(pos.X, pos.Y, pos.Z)
-				if nearestWood then
-					colorName = nearestWood
+			task.spawn(function()
+				-- determine color: try nearest data entry's wood, fallback to input box
+				local colorName = defaultColor
+				local primary = model.PrimaryPart
+				if primary then
+					local pos = primary.Position
+					local nearestWood = findNearestWood(pos.X, pos.Y, pos.Z)
+					if nearestWood then
+						colorName = nearestWood
+					end
 				end
-			end
-			pcall(function()
-				paintRemote:FireServer(model, colorName)
+				pcall(function()
+					paintRemote:FireServer(model, colorName)
+				end)
 			end)
 			cnt = cnt + 1
 			progressLbl.Text = "Progress: " .. cnt .. "/" .. total
-			task.wait(0.01)
 		end
 		statusLbl.Text = running and ("Paint done! " .. cnt .. "/" .. total) or "Stopped at " .. cnt .. "/" .. total
 		if running then
