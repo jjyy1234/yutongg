@@ -1,393 +1,244 @@
--- YUTONG-AutoBuild by YUTONGG
--- Uses ClientPlacedBlueprint to auto-build from blueprint data
--- Building data loaded from GitHub via HttpGet
--- v3: concurrent packet sending (task.spawn), Fill replaced with Build+Paint
-
 local Players = game:GetService("Players")
-local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterGui = game:GetService("StarterGui")
+local Workspace = game:GetService("Workspace")
 local lp = Players.LocalPlayer
 
--- 从 GitHub 加载白名单
-local WHITELIST = {}
-do
-	local ok, result = pcall(function()
-		return game:HttpGet("https://raw.githubusercontent.com/jjyy1234/yutongg/main/whitelist.txt", true)
-	end)
-	if ok and result then
-		for name in result:gmatch("[^\r\n]+") do
-			name = name:match("^%s*(.-)%s*$")
-			if #name > 0 then
-				WHITELIST[name] = true
-			end
-		end
-	end
-end
+local AUTH = {["gccgbxfnb0"]=true,["hxa1010"]=true,["gccgbxfnb4"]=true,["gccgbxfnb3"]=true,["xiguayyds"]=true,["xiaojun1221"]=true,["X8jone"]=true}
+if not AUTH[lp.Name] then lp:Kick("Unauthorized") return end
 
-if not WHITELIST[lp.Name] then
-	lp:Kick("Unauthorized")
-	return
-end
+local placeRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("ClientPlacedBlueprint")
+local paintRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("PaintTool")
 
-local placeRemote = ReplicatedStorage.PlaceStructure.ClientPlacedBlueprint
-local paintRemote = ReplicatedStorage.PlaceStructure.PaintTool
+local DATA = nil
+pcall(function()
+    DATA = loadstring(game:HttpGet("https://raw.githubusercontent.com/jjyy1234/yutongg/main/blueprint_data_new2.lua"))()
+end)
+if not DATA then warn("Failed to load blueprint_data") return end
+local TOTAL = #DATA
 
--- 从 GitHub 加载建筑数据
-local DATA = loadstring(game:HttpGet("https://raw.githubusercontent.com/jjyy1234/yutongg/main/blueprint_data_new.lua", true))()
-local dataCount = #DATA
+local function notify(t, tx) pcall(function() StarterGui:SetCore("SendNotification",{Title=t,Text=tx,Duration=3}) end) end
 
-local function notify(title, text, duration)
-	pcall(function()
-		StarterGui:SetCore("SendNotification", {
-			Title = title,
-			Text = text,
-			Duration = duration or 3,
-		})
-	end)
-end
+-- UI
+local old = lp.PlayerGui:FindFirstChild("CBGui")
+if old then old:Destroy() end
+local sg = Instance.new("ScreenGui", lp.PlayerGui)
+sg.Name = "CBGui"; sg.ResetOnSpawn = false; sg.IgnoreGuiInset = true
 
--- 构建坐标→wood 查找表（用于 Paint 按最近坐标匹配颜色）
-local woodLookup = {}
-do
-	for i, d in ipairs(DATA) do
-		if d.wood and d.wood ~= "?" then
-			table.insert(woodLookup, {x = d.x, y = d.y, z = d.z, wood = d.wood})
-		end
-	end
-end
+local mf = Instance.new("Frame", sg)
+mf.Size = UDim2.new(0,220,0,210)
+mf.Position = UDim2.new(0,20,0.5,-105)
+mf.BackgroundColor3 = Color3.fromRGB(245,248,252)
+mf.BorderSizePixel = 0; mf.Active = true
+Instance.new("UICorner",mf).CornerRadius = UDim.new(0,8)
+local s = Instance.new("UIStroke",mf); s.Color=Color3.fromRGB(200,210,225); s.Thickness=1
 
-local function findNearestWood(x, y, z)
-	local best = nil
-	local bestDist = math.huge
-	for _, w in ipairs(woodLookup) do
-		local dx = w.x - x
-		local dy = w.y - y
-		local dz = w.z - z
-		local dist = dx*dx + dy*dy + dz*dz
-		if dist < bestDist then
-			bestDist = dist
-			best = w.wood
-		end
-	end
-	return best
-end
+-- Title
+local tb = Instance.new("Frame",mf)
+tb.Size=UDim2.new(1,0,0,28); tb.BackgroundColor3=Color3.fromRGB(72,132,168); tb.BorderSizePixel=0
+Instance.new("UICorner",tb).CornerRadius=UDim.new(0,8)
+local tl=Instance.new("TextLabel",tb)
+tl.Size=UDim2.new(1,-10,1,0); tl.Position=UDim2.new(0,10,0,0)
+tl.BackgroundTransparency=1; tl.Text="Copy Builder"
+tl.TextColor3=Color3.fromRGB(255,255,255); tl.Font=Enum.Font.GothamBold; tl.TextSize=13
+tl.TextXAlignment=Enum.TextXAlignment.Left
 
-local W = Color3.fromRGB(255,255,255)
-local TEXT = Color3.fromRGB(0,0,0)
-local SUBTEXT = Color3.fromRGB(60,60,60)
-
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "YUTONG_AutoBuild"
-screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screenGui.Parent = lp:WaitForChild("PlayerGui")
-
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0,240,0,320)
-main.Position = UDim2.new(0,10,0.5,-160)
-main.BackgroundColor3 = W
-main.BackgroundTransparency = 0.2
-main.BorderSizePixel = 0
-main.Active = true
-main.Draggable = true
-main.Parent = screenGui
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,12)
-
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1,0,0,36)
-titleBar.BackgroundColor3 = W
-titleBar.BackgroundTransparency = 0.3
-titleBar.BorderSizePixel = 0
-titleBar.Parent = main
-Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0,12)
-
-local titleLbl = Instance.new("TextLabel")
-titleLbl.Size = UDim2.new(1,0,1,0)
-titleLbl.BackgroundTransparency = 1
-titleLbl.Text = "YUTONG AutoBuild"
-titleLbl.TextColor3 = TEXT
-titleLbl.TextSize = 13
-titleLbl.Font = Enum.Font.GothamBold
-titleLbl.Parent = titleBar
-
-local statusLbl = Instance.new("TextLabel")
-statusLbl.Size = UDim2.new(1,-16,0,18)
-statusLbl.Position = UDim2.new(0,8,0,40)
-statusLbl.BackgroundTransparency = 1
-statusLbl.Text = "Ready (" .. dataCount .. " blocks)"
-statusLbl.TextColor3 = SUBTEXT
-statusLbl.TextSize = 11
-statusLbl.Font = Enum.Font.Gotham
-statusLbl.TextXAlignment = Enum.TextXAlignment.Left
-statusLbl.Parent = main
-
-local progressLbl = Instance.new("TextLabel")
-progressLbl.Size = UDim2.new(1,-16,0,18)
-progressLbl.Position = UDim2.new(0,8,0,60)
-progressLbl.BackgroundTransparency = 1
-progressLbl.Text = "Progress: 0/" .. dataCount
-progressLbl.TextColor3 = TEXT
-progressLbl.TextSize = 11
-progressLbl.Font = Enum.Font.GothamBold
-progressLbl.TextXAlignment = Enum.TextXAlignment.Left
-progressLbl.Parent = main
-
--- helper: create a button row with optional input box beside it
-local function makeBtnWithInput(btnText, inputText, inputDefault, y)
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0,100,0,30)
-	btn.Position = UDim2.new(0,8,0,y)
-	btn.BackgroundColor3 = W
-	btn.BackgroundTransparency = 0.3
-	btn.BorderSizePixel = 0
-	btn.Text = btnText
-	btn.TextColor3 = TEXT
-	btn.TextSize = 12
-	btn.Font = Enum.Font.GothamBold
-	btn.Parent = main
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,7)
-
-	local box = Instance.new("TextBox")
-	box.Size = UDim2.new(1,-120,0,30)
-	box.Position = UDim2.new(0,116,0,y)
-	box.BackgroundColor3 = W
-	box.BackgroundTransparency = 0.4
-	box.BorderSizePixel = 0
-	box.Text = inputDefault or ""
-	box.PlaceholderText = inputText or ""
-	box.TextColor3 = TEXT
-	box.PlaceholderColor3 = SUBTEXT
-	box.TextSize = 11
-	box.Font = Enum.Font.Gotham
-	box.ClearTextOnFocus = false
-	box.Parent = main
-	Instance.new("UICorner", box).CornerRadius = UDim.new(0,7)
-
-	return btn, box
-end
-
-local function makeBtn(text, y, h)
-	h = h or 30
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1,-16,0,h)
-	btn.Position = UDim2.new(0,8,0,y)
-	btn.BackgroundColor3 = W
-	btn.BackgroundTransparency = 0.3
-	btn.BorderSizePixel = 0
-	btn.Text = text
-	btn.TextColor3 = TEXT
-	btn.TextSize = 12
-	btn.Font = Enum.Font.GothamBold
-	btn.Parent = main
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0,7)
-	return btn
-end
-
--- Build button (full width)
-local buildBtn = makeBtn("Build", 88)
-
--- Build+Paint button (full width, no range input needed)
-local buildPaintBtn = makeBtn("Build+Paint", 126)
-
--- Paint button + color input
-local paintBtn, paintBox = makeBtnWithInput("Paint", "Color", "LoneCave", 164)
-
--- Stop button (full width)
-local stopBtn = makeBtn("Stop", 202)
-
-local running = false
-
--- Build: place all blueprint data blocks (concurrent)
-buildBtn.MouseButton1Click:Connect(function()
-	if running then
-		notify("YUTONG", "Already running, press Stop first", 2)
-		return
-	end
-	running = true
-	buildBtn.Text = "Building..."
-	statusLbl.Text = "Building..."
-	notify("YUTONG", "Build started: " .. dataCount .. " blocks", 3)
-	local cnt = 0
-	task.spawn(function()
-		for i, d in ipairs(DATA) do
-			if not running then break end
-			task.spawn(function()
-				pcall(function()
-					placeRemote:FireServer(d.n, CFrame.new(d.x, d.y, d.z,
-						d.r00, d.r01, d.r02,
-						d.r10, d.r11, d.r12,
-						d.r20, d.r21, d.r22), lp)
-				end)
-			end)
-			cnt = cnt + 1
-			progressLbl.Text = "Progress: " .. cnt .. "/" .. dataCount
-		end
-		statusLbl.Text = running and ("Done! " .. cnt .. "/" .. dataCount) or "Stopped at " .. cnt .. "/" .. dataCount
-		if running then
-			notify("YUTONG", "Build complete: " .. cnt .. " blocks", 4)
-		end
-		buildBtn.Text = "Build"
-		running = false
-	end)
+-- Drag
+local drag,ds,sp=false
+tb.InputBegan:Connect(function(i)
+    if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
+        drag=true; ds=i.Position; sp=mf.Position
+        i.Changed:Connect(function() if i.UserInputState==Enum.UserInputState.End then drag=false end end)
+    end
+end)
+tb.InputChanged:Connect(function(i)
+    if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
+        local d=i.Position-ds
+        mf.Position=UDim2.new(sp.X.Scale,sp.X.Offset+d.X,sp.Y.Scale,sp.Y.Offset+d.Y)
+    end
 end)
 
--- Build+Paint: build all blueprint data blocks, then paint them (concurrent)
-buildPaintBtn.MouseButton1Click:Connect(function()
-	if running then
-		notify("YUTONG", "Already running, press Stop first", 2)
-		return
-	end
-	running = true
-	buildPaintBtn.Text = "Build+Paint..."
-	statusLbl.Text = "Building..."
-	notify("YUTONG", "Build+Paint started: " .. dataCount .. " blocks", 3)
-	local cnt = 0
-	task.spawn(function()
-		-- Phase 1: build all blocks concurrently
-		for i, d in ipairs(DATA) do
-			if not running then break end
-			task.spawn(function()
-				pcall(function()
-					placeRemote:FireServer(d.n, CFrame.new(d.x, d.y, d.z,
-						d.r00, d.r01, d.r02,
-						d.r10, d.r11, d.r12,
-						d.r20, d.r21, d.r22), lp)
-				end)
-			end)
-			cnt = cnt + 1
-			progressLbl.Text = "Progress: " .. cnt .. "/" .. dataCount
-		end
-		if not running then
-			statusLbl.Text = "Stopped at " .. cnt .. "/" .. dataCount
-			buildPaintBtn.Text = "Build+Paint"
-			running = false
-			return
-		end
-		-- wait for server to create models
-		statusLbl.Text = "Waiting for server..."
-		task.wait(1)
-		if not running then
-			statusLbl.Text = "Stopped"
-			buildPaintBtn.Text = "Build+Paint"
-			running = false
-			return
-		end
-		-- Phase 2: scan workspace for Owner == lp models and paint concurrently
-		statusLbl.Text = "Painting..."
-		local playerModels = workspace:FindFirstChild("PlayerModels")
-		if not playerModels then
-			playerModels = workspace
-		end
-		local targets = {}
-		for _, obj in ipairs(playerModels:GetChildren()) do
-			if obj:IsA("Model") then
-				local owner = obj:FindFirstChild("Owner")
-				if owner and owner:IsA("ObjectValue") and owner.Value == lp then
-					table.insert(targets, obj)
-				end
-			end
-		end
-		local paintCnt = 0
-		local paintTotal = #targets
-		progressLbl.Text = "Paint: 0/" .. paintTotal
-		for i, model in ipairs(targets) do
-			if not running then break end
-			task.spawn(function()
-				local primary = model.PrimaryPart
-				if primary then
-					local pos = primary.Position
-					local nearestWood = findNearestWood(pos.X, pos.Y, pos.Z)
-					if nearestWood then
-						pcall(function()
-							paintRemote:FireServer(model, nearestWood)
-						end)
-					end
-				end
-			end)
-			paintCnt = paintCnt + 1
-			progressLbl.Text = "Paint: " .. paintCnt .. "/" .. paintTotal
-		end
-		statusLbl.Text = running and ("Done! Build " .. cnt .. ", Paint " .. paintCnt) or "Stopped"
-		if running then
-			notify("YUTONG", "Build+Paint complete: " .. cnt .. " built, " .. paintCnt .. " painted", 4)
-		end
-		buildPaintBtn.Text = "Build+Paint"
-		running = false
-	end)
+-- Owner label
+local ol=Instance.new("TextLabel",mf)
+ol.Size=UDim2.new(1,-16,0,14); ol.Position=UDim2.new(0,8,0,34)
+ol.BackgroundTransparency=1; ol.Text="Owner: (none selected)"
+ol.TextColor3=Color3.fromRGB(60,70,85); ol.Font=Enum.Font.Gotham; ol.TextSize=10
+ol.TextXAlignment=Enum.TextXAlignment.Left
+
+-- Owner scroll
+local os2=Instance.new("ScrollingFrame",mf)
+os2.Size=UDim2.new(1,-16,0,44); os2.Position=UDim2.new(0,8,0,50)
+os2.BackgroundColor3=Color3.fromRGB(235,240,248); os2.BorderSizePixel=0
+os2.ScrollBarThickness=4; os2.AutomaticCanvasSize=Enum.AutomaticSize.Y
+os2.CanvasSize=UDim2.new(0,0,0,0)
+Instance.new("UICorner",os2).CornerRadius=UDim.new(0,5)
+local ul=Instance.new("UIListLayout",os2); ul.Padding=UDim.new(0,2)
+
+-- Scan Owners btn
+local sob=Instance.new("TextButton",mf)
+sob.Size=UDim2.new(1,-16,0,22); sob.Position=UDim2.new(0,8,0,98)
+sob.BackgroundColor3=Color3.fromRGB(33,150,243); sob.BorderSizePixel=0
+sob.Text="Scan Owners"; sob.TextColor3=Color3.fromRGB(255,255,255)
+sob.Font=Enum.Font.GothamBold; sob.TextSize=11
+Instance.new("UICorner",sob).CornerRadius=UDim.new(0,5)
+
+-- Divider
+local dv=Instance.new("Frame",mf)
+dv.Size=UDim2.new(1,-16,0,1); dv.Position=UDim2.new(0,8,0,126)
+dv.BackgroundColor3=Color3.fromRGB(200,210,225); dv.BorderSizePixel=0
+
+-- Progress
+local pl=Instance.new("TextLabel",mf)
+pl.Size=UDim2.new(1,-16,0,16); pl.Position=UDim2.new(0,8,0,132)
+pl.BackgroundTransparency=1; pl.Text="Ready: 0/"..TOTAL
+pl.TextColor3=Color3.fromRGB(60,70,85); pl.Font=Enum.Font.Gotham; pl.TextSize=11
+pl.TextXAlignment=Enum.TextXAlignment.Left
+
+-- 3 buttons
+local BW=math.floor((220-16-8)/3)
+local function mkBtn(x,bg,txt)
+    local b=Instance.new("TextButton",mf)
+    b.Size=UDim2.new(0,BW,0,26); b.Position=UDim2.new(0,x,0,152)
+    b.BackgroundColor3=bg; b.BorderSizePixel=0
+    b.Text=txt; b.TextColor3=Color3.fromRGB(255,255,255)
+    b.Font=Enum.Font.GothamBold; b.TextSize=11; b.AutoButtonColor=false
+    Instance.new("UICorner",b).CornerRadius=UDim.new(0,5)
+    return b
+end
+local startBtn=mkBtn(8,Color3.fromRGB(76,175,80),"Start")
+local stopBtn=mkBtn(8+BW+4,Color3.fromRGB(244,67,54),"Stop")
+local paintBtn=mkBtn(8+(BW+4)*2,Color3.fromRGB(33,150,243),"Paint")
+
+-- Status
+local sl=Instance.new("TextLabel",mf)
+sl.Size=UDim2.new(1,-16,0,14); sl.Position=UDim2.new(0,8,0,184)
+sl.BackgroundTransparency=1; sl.Text="Idle"
+sl.TextColor3=Color3.fromRGB(120,130,145); sl.Font=Enum.Font.Gotham; sl.TextSize=10
+sl.TextXAlignment=Enum.TextXAlignment.Left
+
+-- Logic
+local running=false
+local selOwner=nil
+
+sob.MouseButton1Click:Connect(function()
+    for _,c in ipairs(os2:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+    local seen={}
+    for _,m in ipairs(Workspace:GetDescendants()) do
+        if m:IsA("Model") then
+            local ov=m:FindFirstChild("Owner")
+            if ov and typeof(ov.Value)=="Instance" and ov.Value:IsA("Player") and not seen[ov.Value.Name] then
+                seen[ov.Value.Name]=ov.Value
+                local p=ov.Value
+                local b=Instance.new("TextButton",os2)
+                b.Size=UDim2.new(1,-4,0,16); b.BackgroundColor3=Color3.fromRGB(210,220,235)
+                b.BorderSizePixel=0; b.Text=p.Name
+                b.TextColor3=Color3.fromRGB(50,60,80); b.Font=Enum.Font.Gotham; b.TextSize=10
+                b.AutoButtonColor=false
+                Instance.new("UICorner",b).CornerRadius=UDim.new(0,4)
+                b.MouseButton1Click:Connect(function()
+                    selOwner=p; ol.Text="Owner: "..p.Name
+                    for _,c2 in ipairs(os2:GetChildren()) do
+                        if c2:IsA("TextButton") then
+                            c2.BackgroundColor3=Color3.fromRGB(210,220,235)
+                            c2.TextColor3=Color3.fromRGB(50,60,80)
+                        end
+                    end
+                    b.BackgroundColor3=Color3.fromRGB(72,132,168)
+                    b.TextColor3=Color3.fromRGB(255,255,255)
+                end)
+            end
+        end
+    end
+    local n=0; for _ in pairs(seen) do n=n+1 end
+    sl.Text="Found "..n.." owners"
 end)
 
--- Paint: scan workspace for models owned by lp and paint them (concurrent)
+startBtn.MouseButton1Click:Connect(function()
+    if running then return end
+    if not selOwner then sl.Text="Select an owner first!" return end
+    running=true; sl.Text="Building..."
+    notify("Copy Builder","Placing "..TOTAL.." blueprints")
+    task.spawn(function()
+        local cnt=0
+        for i,d in ipairs(DATA) do
+            if not running then break end
+            if d.n~="Property" then
+                local cf=CFrame.new(d.x,d.y,d.z,d.r00,d.r01,d.r02,d.r10,d.r11,d.r12,d.r20,d.r21,d.r22)
+                pcall(function() placeRemote:FireServer(d.n,cf,lp) end)
+                cnt=cnt+1; pl.Text="Place: "..cnt.."/"..TOTAL
+                task.wait(0.01)
+            end
+        end
+        sl.Text=running and "Build done: "..cnt or "Stopped: "..cnt
+        if running then notify("Copy Builder","Done! "..cnt.." placed") end
+        running=false
+    end)
+end)
+
 paintBtn.MouseButton1Click:Connect(function()
-	if running then
-		notify("YUTONG", "Already running, press Stop first", 2)
-		return
-	end
-	running = true
-	paintBtn.Text = "Painting..."
-	statusLbl.Text = "Scanning workspace..."
-	notify("YUTONG", "Paint started", 3)
-	local cnt = 0
-	task.spawn(function()
-		local playerModels = workspace:FindFirstChild("PlayerModels")
-		if not playerModels then
-			playerModels = workspace
-		end
-		-- collect all models with Owner == lp
-		local targets = {}
-		for _, obj in ipairs(playerModels:GetChildren()) do
-			if obj:IsA("Model") then
-				local owner = obj:FindFirstChild("Owner")
-				if owner and owner:IsA("ObjectValue") and owner.Value == lp then
-					table.insert(targets, obj)
-				end
-			end
-		end
-		local total = #targets
-		statusLbl.Text = "Found " .. total .. " models to paint"
-		progressLbl.Text = "Progress: 0/" .. total
-		local defaultColor = paintBox.Text
-		if not defaultColor or #defaultColor == 0 then
-			defaultColor = "LoneCave"
-		end
-		for i, model in ipairs(targets) do
-			if not running then break end
-			task.spawn(function()
-				-- determine color: try nearest data entry's wood, fallback to input box
-				local colorName = defaultColor
-				local primary = model.PrimaryPart
-				if primary then
-					local pos = primary.Position
-					local nearestWood = findNearestWood(pos.X, pos.Y, pos.Z)
-					if nearestWood then
-						colorName = nearestWood
-					end
-				end
-				pcall(function()
-					paintRemote:FireServer(model, colorName)
-				end)
-			end)
-			cnt = cnt + 1
-			progressLbl.Text = "Progress: " .. cnt .. "/" .. total
-		end
-		statusLbl.Text = running and ("Paint done! " .. cnt .. "/" .. total) or "Stopped at " .. cnt .. "/" .. total
-		if running then
-			notify("YUTONG", "Paint complete: " .. cnt .. " models", 4)
-		end
-		paintBtn.Text = "Paint"
-		running = false
-	end)
+    if running then return end
+    if not selOwner then sl.Text="Select an owner first!" return end
+    running=true; sl.Text="Indexing..."
+    notify("Copy Builder","Painting...")
+    task.spawn(function()
+        local idx={}
+        local ownerName = selOwner and selOwner.Name or ""
+        for _,m in ipairs(Workspace:GetDescendants()) do
+            if m:IsA("Model") then
+                local ov=m:FindFirstChild("Owner")
+                local match = false
+                if ov then
+                    if typeof(ov.Value)=="Instance" and ov.Value:IsA("Player") and ov.Value.Name==ownerName then
+                        match=true
+                    elseif typeof(ov.Value)=="string" and ov.Value==ownerName then
+                        match=true
+                    end
+                end
+                if match then
+                    local pp=m.PrimaryPart or m:FindFirstChildWhichIsA("BasePart")
+                    if pp then
+                        local p=pp.Position
+                        local k=math.floor(p.X+0.5).."_"..math.floor(p.Y+0.5).."_"..math.floor(p.Z+0.5)
+                        idx[k]=m
+                    end
+                end
+            end
+        end
+        local idxCount=0; for _ in pairs(idx) do idxCount=idxCount+1 end
+        sl.Text="Indexed: "..idxCount.." models"
+        task.wait(0.5)
+        local painted,skip=0,0
+        for i,d in ipairs(DATA) do
+            if not running then break end
+            if d.n~="Property" and d.wood and d.wood~="?" then
+                local k=math.floor(d.x+0.5).."_"..math.floor(d.y+0.5).."_"..math.floor(d.z+0.5)
+                local m=idx[k]
+                if not m then
+                    for dx=-2,2 do for dy=-2,2 do for dz=-2,2 do
+                        local k2=(math.floor(d.x+0.5)+dx).."_"..(math.floor(d.y+0.5)+dy).."_"..(math.floor(d.z+0.5)+dz)
+                        if idx[k2] then m=idx[k2] break end
+                    end if m then break end end if m then break end end
+                end
+                if m then pcall(function() paintRemote:FireServer(m,d.wood) end) painted=painted+1
+                else skip=skip+1 end
+                task.wait(0.01)
+            end
+            if i%100==0 then
+                pl.Text="Paint: "..i.."/"..TOTAL
+                sl.Text="Painted:"..painted.." Skip:"..skip
+            end
+        end
+        pl.Text="Paint: "..TOTAL.."/"..TOTAL
+        sl.Text=running and "Paint done: "..painted or "Stopped"
+        if running then notify("Copy Builder","Paint done! "..painted) end
+        running=false
+    end)
 end)
 
--- Stop button
 stopBtn.MouseButton1Click:Connect(function()
-	if running then
-		running = false
-		statusLbl.Text = "Stopped"
-		notify("YUTONG", "Stopped", 2)
-	else
-		notify("YUTONG", "Not running", 2)
-	end
+    running=false; sl.Text="Stopped"
+    notify("Copy Builder","Stopped")
 end)
 
-notify("YUTONG", "AutoBuild loaded: " .. dataCount .. " blocks", 3)
-print("[YUTONG-AutoBuild] Loaded, data entries: " .. dataCount)
+notify("Copy Builder","Loaded "..TOTAL.." blueprints")
+sl.Text="Ready"
