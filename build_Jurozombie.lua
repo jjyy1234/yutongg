@@ -176,6 +176,7 @@ local BLUEPRINT_NAMES = {
     "Floor1Tiny","Floor2Tiny","Floor3Tiny","Floor4Tiny","Floor5Tiny",
     "Wall1Short","Wall2Short","Wall2ShortThin","Wall3Short",
     "Ramp1","Ramp2","Ramp3","Stair1","Stair2","Roof1","Roof2","Roof3",
+    "Floor1Large","Floor2Large","Floor3Large",
 }
 
 local ROTATIONS = {
@@ -366,12 +367,12 @@ chaosBtn.MouseButton1Click:Connect(function()
 
     if found == 0 then statusLbl.Text="No blocks found" return end
 
-    local pad = 10
+    local pad = 30
     minX=minX-pad; maxX=maxX+pad; minZ=minZ-pad; maxZ=maxZ+pad
 
     local count = tonumber(chaosInput.Text) or 500
     if count < 1 then count=1 end
-    if count > 3000 then count=3000 end
+    if count > 9999 then count=9999 end
 
     running = true
     modeLbl.Text = "Mode: Chaos"
@@ -382,9 +383,9 @@ chaosBtn.MouseButton1Click:Connect(function()
         local packets = {}
         for i = 1, count do
             local rx = minX + math.random()*(maxX-minX)
-            local ry = 0.2 + math.random()*30
+            local ry = 0.2 + math.random()*150
             local rz = minZ + math.random()*(maxZ-minZ)
-            local bpName = math.random()<0.6 and "Floor1Tiny" or BLUEPRINT_NAMES[math.random(#BLUEPRINT_NAMES)]
+            local bpName = math.random()<0.9 and "Floor1Tiny" or BLUEPRINT_NAMES[math.random(#BLUEPRINT_NAMES)]
             local rot = ROTATIONS[math.random(#ROTATIONS)]
             local cf = CFrame.new(rx,ry,rz, rot[1],rot[2],rot[3], rot[4],rot[5],rot[6], rot[7],rot[8],rot[9])
             packets[i] = {bpName, cf}
