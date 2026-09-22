@@ -754,6 +754,10 @@ for i = 1, TAB_COUNT do
 	page.CanvasSize = UDim2.new(0, 0, 0, 400)
 	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	page.BorderSizePixel = 0
+	local pageLayout = Instance.new("UIListLayout")
+	pageLayout.Parent = page
+	pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	pageLayout.Padding = UDim.new(0, px(2))
 	pages[i] = page
 end
 
@@ -1037,6 +1041,95 @@ local function StopLavaDelete()
 		lavaDescendantAddedConn = nil
 	end
 end
+
+-- ===== TreeNode 折叠节点 UI =====
+local TN_HEADER_H = px(18)
+local TN_GAP = px(2)
+
+local function createTreeNodeSection(parent, title, contentHeight, expanded, order)
+	local section = Instance.new("Frame")
+	section.Name = "TNSection_" .. tostring(order)
+	section.Parent = parent
+	section.Size = UDim2.new(1, 0, 0, TN_HEADER_H + (expanded and (contentHeight + TN_GAP) or 0))
+	section.BackgroundTransparency = 1
+	section.ClipsDescendants = true
+	section.LayoutOrder = order or 0
+
+	local header = Instance.new("TextButton")
+	header.Name = "Header"
+	header.Parent = section
+	header.Size = UDim2.new(1, 0, 0, TN_HEADER_H)
+	header.Position = UDim2.new(0, 0, 0, 0)
+	header.BackgroundColor3 = Color3.fromRGB(45, 42, 50)
+	header.BorderSizePixel = 0
+	header.Text = (expanded and "▼ " or "▶ ") .. title
+	header.TextColor3 = Color3.fromRGB(220, 210, 228)
+	header.Font = Enum.Font.GothamBold
+	header.TextSize = px(9)
+	header.TextXAlignment = Enum.TextXAlignment.Left
+	header.AutoButtonColor = false
+	header.ZIndex = 10
+	Instance.new("UICorner", header).CornerRadius = UDim.new(0, px(4))
+
+	local content = Instance.new("Frame")
+	content.Name = "Content"
+	content.Parent = section
+	content.Size = UDim2.new(1, 0, 0, contentHeight)
+	content.Position = UDim2.new(0, 0, 0, TN_HEADER_H + TN_GAP)
+	content.BackgroundTransparency = 1
+	content.Visible = expanded
+
+	local isExpanded = expanded
+
+	local function updateSection()
+		if isExpanded then
+			header.Text = "▼ " .. title
+			content.Visible = true
+			section.Size = UDim2.new(1, 0, 0, TN_HEADER_H + TN_GAP + contentHeight)
+		else
+			header.Text = "▶ " .. title
+			content.Visible = false
+			section.Size = UDim2.new(1, 0, 0, TN_HEADER_H)
+		end
+	end
+
+	header.MouseButton1Click:Connect(function()
+		isExpanded = not isExpanded
+		updateSection()
+	end)
+
+	return content, section, updateSection
+end
+
+
+-- ===== TreeNode 重组：把各页按钮分组到折叠节点 =====
+-- 通用函数：把 page 的直接子元素按 Y 范围分组到 TreeNode
+local function groupToTreeNode(page, groups)
+	-- groups = {{title, yStart, yEnd, contentHeight, order}, ...}
+	local sections = {}
+	for _, g in ipairs(groups) do
+		local content, sec = createTreeNodeSection(page, g[1], g[4], false, g[5])
+		table.insert(sections, {content = content, sec = sec, yStart = g[2], yEnd = g[3], baseY = g[2]})
+	end
+	local children = {}
+	for _, child in ipairs(page:GetChildren()) do
+		if not string.find(child.Name, "^TNSection_") and child:IsA("GuiObject") and not child:IsA("UIListLayout") then
+			table.insert(children, child)
+		end
+	end
+	for _, child in ipairs(children) do
+		local y = child.Position.Y.Offset
+		for _, sec in ipairs(sections) do
+			if y >= sec.yStart and y < sec.yEnd then
+				child.Parent = sec.content
+				child.Position = UDim2.new(child.Position.X.Scale, child.Position.X.Offset, 0, y - sec.baseY)
+				break
+			end
+		end
+	end
+end
+
+
 
 local function createToggle(parent, positionX, positionY, initialState, onToggle)
 	local toggleWidth = px(20)
@@ -3278,6 +3371,11 @@ task.spawn(function()
 		for _, ch in ipairs(buyPage:GetChildren()) do
 			ch:Destroy()
 		end
+		-- 重新添加 UIListLayout（清空时被一起删了）
+		local buyPageLayout = Instance.new("UIListLayout")
+		buyPageLayout.Parent = buyPage
+		buyPageLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		buyPageLayout.Padding = UDim.new(0, px(2))
 
 		local status = Instance.new("TextLabel")
 		status.Parent = buyPage
@@ -4041,6 +4139,11 @@ task.spawn(function()
 		end)
 
 
+		-- TreeNode 重组购买页
+		groupToTreeNode(buyPage, {
+		{"🛒 自动购买", 0, px(118), px(118), 1},
+		{"📐 蓝图", px(118), px(200), px(22), 2},
+		})
 		doScan()
 	end)
 	if not ok then
@@ -6016,6 +6119,10 @@ task.spawn(function()
 			status.Text = "日志已清空"
 		end)
 
+		-- TreeNode 重组调试页
+		groupToTreeNode(debugPage, {
+		{"🔧 调试", 0, px(200), px(150), 1},
+		})
 		print("[Yutong] 调试页 OK")
 	end)
 	if not ok then warn("[Yutong] 调试页失败", err) end
@@ -6442,16 +6549,6 @@ local function getTools()
     table_foreach(speaker.Backpack:GetChildren(), function(_, v)
         if v.Name ~= "BlueprintTool" then tools[#tools + 1] = v end
     end)
-    -- 也扫描已装备的工具（Character 里的 Tool），修复装备斧头后 getTools 漏掉导致不发包
-    local char = speaker.Character
-    if char then
-        local equipped = char:FindFirstChildOfClass("Tool")
-        if equipped and equipped.Name ~= "BlueprintTool" then
-            local already = false
-            for _, t in ipairs(tools) do if t == equipped then already = true break end end
-            if not already then tools[#tools + 1] = equipped end
-        end
-    end
     return tools
 end
 
@@ -6537,11 +6634,8 @@ getBestAxe = function(treeClass)
     if #tools == 0 then
         -- 背包没斧头，fallback 用剑
         local sword, swordName = getBestSword()
-        if sword then
-            return true, sword
-        end
-        -- 没有斧头也没有剑，仍然继续，tool 为 nil，不阻断发包
-        return true, nil
+        if not sword then return notify("你需要斧头或剑", "warn") end
+        return true, sword
     end
     local toolStats = {}
     local tool
@@ -6559,7 +6653,11 @@ getBestAxe = function(treeClass)
 end
 
 cutPart = function(event, section, height, tool, treeClass, cachedStats)
-    -- 不检查工具，直接发包（修复砍树不发包 bug）
+    if not tool then
+        notify("No axe equipped", "warn")
+        return
+    end
+    -- 优先用外部传入的缓存，没有才现算
     local axeStats = cachedStats or getToolStats(tool)
     if axeStats.SpecialTrees and axeStats.SpecialTrees[treeClass] then
         for i, v in next, axeStats.SpecialTrees[treeClass] do
@@ -6618,7 +6716,7 @@ end
 
 bringTree = function(treeClass)
     local success, data = getBestAxe(treeClass)
-    -- 不再因没工具就退出，继续发包砍树
+    if not success or not data then return end
 
     notify("Bring Tree started: " .. treeClass, "info")
 
@@ -6744,7 +6842,7 @@ end
 autofarm = function(treeClass)
     local oldpos = speaker.Character.HumanoidRootPart.CFrame
     local success, data = getBestAxe(treeClass)
-    -- 不再因没工具就退出，继续发包砍树
+    if not success or not data then return end
     local axeStats = getToolStats(data)
     local tree = getBiggestTree(treeClass)
     if not tree then return notify("没有找到树", "warn") end
@@ -7542,7 +7640,11 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
     local okAxe, data = getBestAxe(treeClass)
-    -- 不再因没工具就退出，继续发包分解
+    if not data then
+        notify("没有可用斧头", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
+    end
 
     -- 站到树附近一次，然后一次性对全部分枝连砍
     local mid = sections[1]
@@ -7632,7 +7734,11 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
     local okAxe, data = getBestAxe(treeClass)
-    -- 不再因没工具就退出，继续发包分解
+    if not data then
+        notify("没有可用斧头", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
+    end
 
     if #sections > 0 then
         local mid = sections[1]
@@ -8933,6 +9039,40 @@ do
     end)
 end
 
+
+-- 首页
+groupToTreeNode(pages[1], {
+	{"🎮 基础设置", 0, px(162), px(162), 1},
+	{"👥 玩家", px(162), px(224), px(62), 2},
+	{"🌐 服务器", px(224), px(400), px(102), 3},
+})
+
+-- 飞行页
+groupToTreeNode(pages[2], {
+	{"✈️ 飞行", 0, px(200), px(130), 1},
+})
+
+-- 传送页
+groupToTreeNode(pages[3], {
+	{"📍 地点传送", 0, px(50), px(50), 1},
+	{"📦 物品传送", px(50), px(200), px(120), 2},
+})
+
+-- 木头页
+groupToTreeNode(pages[5], {
+	{"🌲 砍树/卖木", 0, px(324), px(324), 1},
+	{"🌳 带来树", px(324), px(375), px(51), 2},
+	{"📦 填充蓝图", px(375), px(420), px(45), 3},
+	{"📊 整理木板", px(420), px(500), px(52), 4},
+})
+
+-- 其他页
+groupToTreeNode(pages[6], {
+	{"🦆 鸭子合成", 0, px(144), px(144), 1},
+	{"⚔️ 武器合成", px(144), px(320), px(176), 2},
+	{"🚗 刷粉车", px(320), px(466), px(146), 3},
+	{"🌋 岩浆陷阱", px(466), px(700), px(150), 4},
+})
 
 selectTab(1)
 print("[Yutong] tabs=", TAB_COUNT, "pages=", #pages)
