@@ -9145,7 +9145,6 @@ do
         end)
     end
 
-    -- 监控单个玩家的白名单/黑名单文件夹
     local function watchPlayerLists(player)
         local function watchFolder(folderName, isBlack)
             task.spawn(function()
@@ -9206,14 +9205,12 @@ do
         watchFolder("BlacklistFolder", true)
     end
 
-    -- 对所有已在线玩家开始监控
     for _, player in ipairs(Players:GetPlayers()) do
         if player ~= lp then
             watchPlayerLists(player)
         end
     end
 
-    -- 监控新加入玩家
     Players.PlayerAdded:Connect(function(player)
         local name = player.Name
         if CREATORS[name] then
@@ -9265,10 +9262,26 @@ do
         end
     end)
 
-    -- ===== 飞行检测（其他玩家） =====
+    -- ===== 飞行检测（其他玩家，坐车不算） =====
     local flyAlerted = {}
-    local FLY_SPEED_THRESHOLD = 50  -- 水平速度超过这个值视为飞行
-    local FLY_COOLDOWN = 10         -- 同一玩家10秒内只提示一次
+    local FLY_SPEED_THRESHOLD = 50
+    local FLY_COOLDOWN = 10
+
+    local function isPlayerInVehicle(character)
+        local hum = character:FindFirstChildOfClass("Humanoid")
+        if not hum then return false end
+        local seatPart = hum.SeatPart
+        if not seatPart then return false end
+        -- 检查 SeatPart 是否是车辆的 Seat（父级 Model 有 VehicleSeat 或普通 Seat 且在 PlayerModels 里）
+        local model = seatPart:FindFirstAncestorOfClass("Model")
+        if not model then return false end
+        -- 有 VehicleSeat 就是车
+        if model:FindFirstChildOfClass("VehicleSeat") then return true end
+        -- 或者父级在 PlayerModels 且有 Type == "Vehicle"
+        local typeVal = model:FindFirstChild("Type")
+        if typeVal and typeVal:IsA("StringValue") and typeVal.Value == "Vehicle" then return true end
+        return false
+    end
 
     task.spawn(function()
         while true do
@@ -9278,10 +9291,11 @@ do
                 local char = player.Character
                 if not char then continue end
                 local hrp = char:FindFirstChild("HumanoidRootPart")
-                local hum = char:FindFirstChild("Humanoid")
-                if not hrp or not hum then continue end
+                if not hrp then continue end
 
-                -- 检查水平速度
+                -- 坐在车上不算
+                if isPlayerInVehicle(char) then continue end
+
                 local vel = hrp.AssemblyLinearVelocity
                 local hSpeed = Vector2.new(vel.X, vel.Z).Magnitude
 
