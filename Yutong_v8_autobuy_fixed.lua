@@ -2663,21 +2663,27 @@ carTeleportBtn.AutoButtonColor = false
 Instance.new("UICorner", carTeleportBtn).CornerRadius = UDim.new(0, px(4))
 
 carTeleportBtn.MouseButton1Click:Connect(function()
-	-- 找自己的车（与 magma_trap 相同逻辑）
-	local car, driverSeat, passSeat = nil, nil, nil
-	for _, obj in ipairs(workspace.PlayerModels:GetChildren()) do
-		local owner = obj:FindFirstChild("Owner")
-		if owner and owner.Value == speaker then
-			local driver = obj:FindFirstChild("DriverSeat", true)
-			local pass = obj:FindFirstChild("Seat", true)
-			if driver or pass then
-				car, driverSeat, passSeat = obj, driver, pass
-				break
+	-- 找玩家正在坐的车（与 magma_trap 相同逻辑）
+	local char = speaker.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	local seatPart = hum and hum.SeatPart
+	local car = nil
+	if seatPart then
+		local node = seatPart
+		while node and node ~= workspace.PlayerModels and node ~= workspace do
+			if node:IsA("Model") then
+				local driver = node:FindFirstChild("DriverSeat", true)
+				local pass = node:FindFirstChild("Seat", true)
+				if driver or pass then
+					car = node
+					break
+				end
 			end
+			node = node.Parent
 		end
 	end
 	if not car then
-		pcall(function() notify("找不到你的车！", "warn") end)
+		pcall(function() notify("你没有在坐车", "warn") end)
 		return
 	end
 
@@ -8852,17 +8858,25 @@ end
 
 local MAGMA_CF = CFrame.new(-1671.5, 268.9, 1259.5)
 
--- 找自己的车，返回 car, driverSeat, passSeat
+-- 找玩家正在坐的车，返回 car, driverSeat, passSeat
 local function magma_findMyCar()
-    for _, obj in ipairs(workspace.PlayerModels:GetChildren()) do
-        local owner = obj:FindFirstChild("Owner")
-        if owner and owner.Value == speaker then
-            local driver = obj:FindFirstChild("DriverSeat", true)
-            local pass   = obj:FindFirstChild("Seat", true)
+    local char = speaker.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local seatPart = hum and hum.SeatPart
+    if not seatPart then
+        return nil, nil, nil
+    end
+    -- 从 seatPart 往上找到车的 Model
+    local node = seatPart
+    while node and node ~= workspace.PlayerModels and node ~= workspace do
+        if node:IsA("Model") then
+            local driver = node:FindFirstChild("DriverSeat", true)
+            local pass = node:FindFirstChild("Seat", true)
             if driver or pass then
-                return obj, driver, pass
+                return node, driver, pass
             end
         end
+        node = node.Parent
     end
     return nil, nil, nil
 end
@@ -9059,7 +9073,7 @@ do
 
         local car, _, passSeat = magma_findMyCar()
         if not car then
-            magmaStatusLbl.Text = "状态: 找不到你的车！"
+            magmaStatusLbl.Text = "状态: 你没有在坐车"
             return
         end
         if not passSeat then
