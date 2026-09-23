@@ -1460,49 +1460,44 @@ local lowerBridgeBtn = Instance.new("TextButton")
 lowerBridgeBtn.Parent = homePage
 lowerBridgeBtn.Size = UDim2.new(1, -px(10), 0, px(18))
 lowerBridgeBtn.Position = UDim2.new(0, px(5), 0, px(224))
-lowerBridgeBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+lowerBridgeBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
 lowerBridgeBtn.BorderSizePixel = 0
-lowerBridgeBtn.Text = "Lower Bridge"
-lowerBridgeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+lowerBridgeBtn.Text = "LowerBridge"
+lowerBridgeBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
 lowerBridgeBtn.Font = Enum.Font.GothamBold
 lowerBridgeBtn.TextSize = px(9)
 lowerBridgeBtn.AutoButtonColor = false
 Instance.new("UICorner", lowerBridgeBtn).CornerRadius = UDim.new(0, px(4))
-
 lowerBridgeBtn.MouseButton1Click:Connect(function()
-	local token = "t?n4ghq6PsJ!dX%NNNb"
-	local bridgeRemote = ReplicatedStorage:FindFirstChild("Interaction") and ReplicatedStorage.Interaction:FindFirstChild("LowerBridge")
-	if bridgeRemote then
-		pcall(function() bridgeRemote:FireServer(token, "99999999") end)
-		notify("YUTONG", "LowerBridge sent")
-	end
+    pcall(function()
+        game:GetService("ReplicatedStorage").Interaction.LowerBridge:FireServer("t?n4ghq6PsJ!dX%NNNb", "99999999")
+    end)
+    pcall(function() notify("YUTONG", "LowerBridge sent", 2) end)
 end)
 
 local requestMaxLandBtn = Instance.new("TextButton")
 requestMaxLandBtn.Parent = homePage
 requestMaxLandBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-requestMaxLandBtn.Position = UDim2.new(0, px(5), 0, px(244))
-requestMaxLandBtn.BackgroundColor3 = Color3.fromRGB(100, 220, 150)
+requestMaxLandBtn.Position = UDim2.new(0, px(5), 0, px(246))
+requestMaxLandBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 requestMaxLandBtn.BorderSizePixel = 0
-requestMaxLandBtn.Text = "Request Max Land"
-requestMaxLandBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+requestMaxLandBtn.Text = "RequestMaxLand"
+requestMaxLandBtn.TextColor3 = Color3.fromRGB(112, 91, 145)
 requestMaxLandBtn.Font = Enum.Font.GothamBold
 requestMaxLandBtn.TextSize = px(9)
 requestMaxLandBtn.AutoButtonColor = false
 Instance.new("UICorner", requestMaxLandBtn).CornerRadius = UDim.new(0, px(4))
-
 requestMaxLandBtn.MouseButton1Click:Connect(function()
-	local landRemote = ReplicatedStorage:FindFirstChild("Interaction") and ReplicatedStorage.Interaction:FindFirstChild("RequestMaxLand")
-	if landRemote then
-		pcall(function() landRemote:FireServer() end)
-		notify("YUTONG", "RequestMaxLand sent")
-	end
+    pcall(function()
+        game:GetService("ReplicatedStorage").Interaction.RequestMaxLand:FireServer()
+    end)
+    pcall(function() notify("YUTONG", "RequestMaxLand sent", 2) end)
 end)
 
 local rejoinBtn = Instance.new("TextButton")
 rejoinBtn.Parent = homePage
 rejoinBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-rejoinBtn.Position = UDim2.new(0, px(5), 0, px(264))
+rejoinBtn.Position = UDim2.new(0, px(5), 0, px(268))
 rejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 180, 220)
 rejoinBtn.BorderSizePixel = 0
 rejoinBtn.Text = "重新加入服务器"
@@ -1523,7 +1518,7 @@ end)
 local copyServerLinkBtn = Instance.new("TextButton")
 copyServerLinkBtn.Parent = homePage
 copyServerLinkBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-copyServerLinkBtn.Position = UDim2.new(0, px(5), 0, px(284))
+copyServerLinkBtn.Position = UDim2.new(0, px(5), 0, px(288))
 copyServerLinkBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 copyServerLinkBtn.BorderSizePixel = 0
 copyServerLinkBtn.Text = "复制服务器链接"
@@ -1537,7 +1532,7 @@ Instance.new("UICorner", copyServerLinkBtn).CornerRadius = UDim.new(0, px(4))
 local hopServerBtn = Instance.new("TextButton")
 hopServerBtn.Parent = homePage
 hopServerBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-hopServerBtn.Position = UDim2.new(0, px(5), 0, px(304))
+hopServerBtn.Position = UDim2.new(0, px(5), 0, px(308))
 hopServerBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 150)
 hopServerBtn.BorderSizePixel = 0
 hopServerBtn.Text = "Hop服务器(最少人)"
@@ -1550,7 +1545,7 @@ Instance.new("UICorner", hopServerBtn).CornerRadius = UDim.new(0, px(4))
 copyJobIdBtn = Instance.new("TextButton")
 copyJobIdBtn.Parent = homePage
 copyJobIdBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-copyJobIdBtn.Position = UDim2.new(0, px(5), 0, px(324))
+copyJobIdBtn.Position = UDim2.new(0, px(5), 0, px(328))
 copyJobIdBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 copyJobIdBtn.BorderSizePixel = 0
 copyJobIdBtn.Text = "复制服务器ID"
@@ -1563,7 +1558,7 @@ Instance.new("UICorner", copyJobIdBtn).CornerRadius = UDim.new(0, px(4))
 jobIdBox = Instance.new("TextBox")
 jobIdBox.Parent = homePage
 jobIdBox.Size = UDim2.new(0.62, -px(6), 0, px(18))
-jobIdBox.Position = UDim2.new(0, px(5), 0, px(344))
+jobIdBox.Position = UDim2.new(0, px(5), 0, px(348))
 jobIdBox.BackgroundColor3 = Color3.fromRGB(245, 240, 248)
 jobIdBox.BorderSizePixel = 0
 jobIdBox.Text = ""
@@ -1577,7 +1572,7 @@ Instance.new("UICorner", jobIdBox).CornerRadius = UDim.new(0, px(4))
 joinJobBtn = Instance.new("TextButton")
 joinJobBtn.Parent = homePage
 joinJobBtn.Size = UDim2.new(0.38, -px(8), 0, px(18))
-joinJobBtn.Position = UDim2.new(0.62, 0, 0, px(344))
+joinJobBtn.Position = UDim2.new(0.62, 0, 0, px(348))
 joinJobBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
 joinJobBtn.BorderSizePixel = 0
 joinJobBtn.Text = "进入该服"
@@ -2466,18 +2461,18 @@ local teleportLocations = {
 
 local selectedTeleportIndex = 1
 
--- 人物传送 小字标签
-local playerTpLabel = Instance.new("TextLabel")
-playerTpLabel.Name = "PlayerTpLabel"
-playerTpLabel.Parent = teleportPage
-playerTpLabel.BackgroundTransparency = 1
-playerTpLabel.Position = UDim2.new(0, px(4), 0, px(2))
-playerTpLabel.Size = UDim2.new(1, -px(8), 0, px(12))
-playerTpLabel.Text = "人物传送"
-playerTpLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
-playerTpLabel.Font = Enum.Font.GothamMedium
-playerTpLabel.TextSize = px(8)
-playerTpLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- 人物传送小标题
+local humanTeleportLabel = Instance.new("TextLabel")
+humanTeleportLabel.Name = "HumanTeleportLabel"
+humanTeleportLabel.Parent = teleportPage
+humanTeleportLabel.BackgroundTransparency = 1
+humanTeleportLabel.Position = UDim2.new(0, px(4), 0, px(4))
+humanTeleportLabel.Size = UDim2.new(1, -px(8), 0, px(10))
+humanTeleportLabel.Text = "人物传送"
+humanTeleportLabel.TextColor3 = Color3.fromRGB(112, 91, 145)
+humanTeleportLabel.Font = Enum.Font.GothamBold
+humanTeleportLabel.TextSize = px(8)
+humanTeleportLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local dropdownButton = Instance.new("TextButton")
 dropdownButton.Name = "TeleportDropdown"
@@ -2571,30 +2566,29 @@ teleportBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
--- ===== 汽车传送区块 =====
--- 汽车传送 小字标签
-local carTpLabel = Instance.new("TextLabel")
-carTpLabel.Name = "CarTpLabel"
-carTpLabel.Parent = teleportPage
-carTpLabel.BackgroundTransparency = 1
-carTpLabel.Position = UDim2.new(0, px(4), 0, px(62))
-carTpLabel.Size = UDim2.new(1, -px(8), 0, px(12))
-carTpLabel.Text = "汽车传送"
-carTpLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
-carTpLabel.Font = Enum.Font.GothamMedium
-carTpLabel.TextSize = px(8)
-carTpLabel.TextXAlignment = Enum.TextXAlignment.Left
+-- 汽车传送
+local carTeleportLabel = Instance.new("TextLabel")
+carTeleportLabel.Name = "CarTeleportLabel"
+carTeleportLabel.Parent = teleportPage
+carTeleportLabel.BackgroundTransparency = 1
+carTeleportLabel.Position = UDim2.new(0, px(4), 0, px(62))
+carTeleportLabel.Size = UDim2.new(1, -px(8), 0, px(10))
+carTeleportLabel.Text = "汽车传送"
+carTeleportLabel.TextColor3 = Color3.fromRGB(112, 91, 145)
+carTeleportLabel.Font = Enum.Font.GothamBold
+carTeleportLabel.TextSize = px(8)
+carTeleportLabel.TextXAlignment = Enum.TextXAlignment.Left
 
-local selectedCarTpIndex = 1
+local selectedCarTeleportIndex = 1
 
 local carDropdownButton = Instance.new("TextButton")
 carDropdownButton.Name = "CarTeleportDropdown"
 carDropdownButton.Parent = teleportPage
 carDropdownButton.Size = UDim2.new(1, -px(8), 0, px(18))
-carDropdownButton.Position = UDim2.new(0, px(4), 0, px(76))
+carDropdownButton.Position = UDim2.new(0, px(4), 0, px(74))
 carDropdownButton.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 carDropdownButton.BorderSizePixel = 0
-carDropdownButton.Text = teleportLocations[selectedCarTpIndex].name
+carDropdownButton.Text = teleportLocations[selectedCarTeleportIndex].name
 carDropdownButton.TextColor3 = Color3.fromRGB(112, 91, 145)
 carDropdownButton.Font = Enum.Font.GothamBold
 carDropdownButton.TextSize = px(9)
@@ -2605,7 +2599,7 @@ local carDropdownList = Instance.new("ScrollingFrame")
 carDropdownList.Name = "CarDropdownList"
 carDropdownList.Parent = teleportPage
 carDropdownList.Size = UDim2.new(1, -px(8), 0, px(60))
-carDropdownList.Position = UDim2.new(0, px(4), 0, px(96))
+carDropdownList.Position = UDim2.new(0, px(4), 0, px(94))
 carDropdownList.BackgroundColor3 = Color3.fromRGB(235, 225, 233)
 carDropdownList.BorderSizePixel = 0
 carDropdownList.ScrollBarThickness = 3
@@ -2621,115 +2615,88 @@ carListLayout.Padding = UDim.new(0, 1)
 carListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
 for i, loc in ipairs(teleportLocations) do
-	local carItemBtn = Instance.new("TextButton")
-	carItemBtn.Name = "CarItem_" .. i
-	carItemBtn.Parent = carDropdownList
-	carItemBtn.Size = UDim2.new(1, 0, 0, 16)
-	carItemBtn.BackgroundTransparency = 1
-	carItemBtn.Text = loc.name
-	carItemBtn.TextColor3 = Color3.fromRGB(90, 70, 85)
-	carItemBtn.Font = Enum.Font.GothamMedium
-	carItemBtn.TextSize = px(8)
-	carItemBtn.TextXAlignment = Enum.TextXAlignment.Left
-	carItemBtn.AutoButtonColor = false
-	carItemBtn.ZIndex = 21
-
-	carItemBtn.MouseButton1Click:Connect(function()
-		selectedCarTpIndex = i
-		carDropdownButton.Text = loc.name
-		carDropdownList.Visible = false
-	end)
+    local btn = Instance.new("TextButton")
+    btn.Name = "CarItem_" .. i
+    btn.Parent = carDropdownList
+    btn.Size = UDim2.new(1, 0, 0, 16)
+    btn.BackgroundTransparency = 1
+    btn.Text = loc.name
+    btn.TextColor3 = Color3.fromRGB(90, 70, 85)
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = px(8)
+    btn.TextXAlignment = Enum.TextXAlignment.Left
+    btn.AutoButtonColor = false
+    btn.ZIndex = 21
+    btn.MouseButton1Click:Connect(function()
+        selectedCarTeleportIndex = i
+        carDropdownButton.Text = loc.name
+        carDropdownList.Visible = false
+    end)
 end
 
 carDropdownButton.MouseButton1Click:Connect(function()
-	carDropdownList.Visible = not carDropdownList.Visible
-	if carDropdownList.Visible then
-		carDropdownList.CanvasSize = UDim2.new(0, 0, 0, #teleportLocations * 20)
-	end
+    carDropdownList.Visible = not carDropdownList.Visible
 end)
 
 local carTeleportBtn = Instance.new("TextButton")
 carTeleportBtn.Name = "CarTeleportButton"
 carTeleportBtn.Parent = teleportPage
 carTeleportBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-carTeleportBtn.Position = UDim2.new(0, px(4), 0, px(100))
-carTeleportBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
+carTeleportBtn.Position = UDim2.new(0, px(4), 0, px(98))
+carTeleportBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 150)
 carTeleportBtn.BorderSizePixel = 0
-carTeleportBtn.Text = "汽车传送选中地点"
-carTeleportBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
+carTeleportBtn.Text = "传送车到选中地点"
+carTeleportBtn.TextColor3 = Color3.fromRGB(140, 80, 40)
 carTeleportBtn.Font = Enum.Font.GothamBold
 carTeleportBtn.TextSize = px(9)
 carTeleportBtn.AutoButtonColor = false
 Instance.new("UICorner", carTeleportBtn).CornerRadius = UDim.new(0, px(4))
 
 carTeleportBtn.MouseButton1Click:Connect(function()
-	-- 找玩家正在坐的车（与 magma_trap 相同逻辑）
-	local char = speaker.Character
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	local seatPart = hum and hum.SeatPart
-	local car = nil
-	if seatPart then
-		local node = seatPart
-		while node and node ~= workspace.PlayerModels and node ~= workspace do
-			if node:IsA("Model") then
-				local driver = node:FindFirstChild("DriverSeat", true)
-				local pass = node:FindFirstChild("Seat", true)
-				if driver or pass then
-					car = node
-					break
-				end
-			end
-			node = node.Parent
-		end
-	end
-	if not car then
-		pcall(function() notify("你没有在坐车", "warn") end)
-		return
-	end
-
-	local loc = teleportLocations[selectedCarTpIndex]
-	local targetPos = loc.pos
-	if loc.isHome then
-		targetPos = findMyPropertyPosition()
-	end
-	if not targetPos then
-		pcall(function() notify("无效地点", "warn") end)
-		return
-	end
-
-	local targetCF = CFrame.new(targetPos)
-	local dragRemote = ReplicatedStorage:FindFirstChild("Interaction")
-		and ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
-	if not dragRemote then
-		pcall(function() notify("无 ClientIsDragging", "error") end)
-		return
-	end
-
-	-- 与 magma_trap 相同的发包格式：Begin → Refresh → End + PivotTo
-	pcall(function()
-		dragRemote:FireServer("Begin", car, 5)
-		dragRemote:FireServer("Refresh", car, 5)
-		dragRemote:FireServer("End", car, 5)
-		car:PivotTo(targetCF)
-	end)
-	task.wait(0.05)
-	-- 再钉一次确保到位
-	pcall(function()
-		dragRemote:FireServer("Begin", car, 5)
-		dragRemote:FireServer("Refresh", car, 5)
-		dragRemote:FireServer("End", car, 5)
-		car:PivotTo(targetCF)
-	end)
-	carDropdownList.Visible = false
-	pcall(function() notify("汽车已传送到 " .. loc.name, "success") end)
+    local char = speaker.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    local seatPart = hum and hum.SeatPart
+    if not seatPart then
+        pcall(function() notify("YUTONG", "你没有在坐车", 2) end)
+        return
+    end
+    local car = seatPart
+    while car and car.Parent ~= workspace.PlayerModels and car.Parent ~= workspace do
+        car = car.Parent
+    end
+    if not car or not car:IsA("Model") then
+        pcall(function() notify("YUTONG", "找不到车的 Model", 2) end)
+        return
+    end
+    local loc = teleportLocations[selectedCarTeleportIndex]
+    local targetPos = loc.pos
+    if loc.isHome then
+        targetPos = findMyPropertyPosition and findMyPropertyPosition() or targetPos
+    end
+    if not targetPos then
+        pcall(function() notify("YUTONG", "找不到目标位置", 2) end)
+        return
+    end
+    local targetCF = CFrame.new(targetPos + Vector3.new(0, 3, 0))
+    pcall(function()
+        local _r = game:GetService("ReplicatedStorage").Interaction.ClientIsDragging
+        _r:FireServer("Begin", car, 5)
+        for i = 1, 15 do
+            car:PivotTo(targetCF)
+            _r:FireServer("Refresh", car, 5)
+            task.wait(0.05)
+        end
+        _r:FireServer("End", car, 5)
+    end)
+    carDropdownList.Visible = false
+    pcall(function() notify("YUTONG", "车已传送到 " .. loc.name, 2) end)
 end)
 
--- ===== 物品传送区块（原有） =====
 local itemTeleportLabel = Instance.new("TextLabel")
 itemTeleportLabel.Name = "ItemTeleportLabel"
 itemTeleportLabel.Parent = teleportPage
 itemTeleportLabel.BackgroundTransparency = 1
-itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(122))
+itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(120))
 itemTeleportLabel.Size = UDim2.new(1, -px(8), 0, px(12))
 itemTeleportLabel.Text = "物品传送 (Owner: 自己)"
 itemTeleportLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2741,7 +2708,7 @@ local setPointBtn = Instance.new("TextButton")
 setPointBtn.Name = "SetPoint"
 setPointBtn.Parent = teleportPage
 setPointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-setPointBtn.Position = UDim2.new(0, px(4), 0, px(136))
+setPointBtn.Position = UDim2.new(0, px(4), 0, px(64))
 setPointBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 setPointBtn.BorderSizePixel = 0
 setPointBtn.Text = "设置传送点"
@@ -2780,7 +2747,7 @@ local deletePointBtn = Instance.new("TextButton")
 deletePointBtn.Name = "DeletePoint"
 deletePointBtn.Parent = teleportPage
 deletePointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-deletePointBtn.Position = UDim2.new(0, px(4), 0, px(156))
+deletePointBtn.Position = UDim2.new(0, px(4), 0, px(84))
 deletePointBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 deletePointBtn.BorderSizePixel = 0
 deletePointBtn.Text = "删除传送点"
@@ -2799,7 +2766,7 @@ deletePointBtn.MouseButton1Click:Connect(function()
 	pcall(function() notify("已清除传送点", "info") end)
 end)
 
-local selectModeToggle = createToggle(teleportPage, px(4), px(176), false, function(on)
+local selectModeToggle = createToggle(teleportPage, px(4), px(104), false, function(on)
 	selectMode = on
 	pcall(function()
 		notify(on and "选择模式：开 · 点击物品选中" or "选择模式：关", on and "success" or "info")
@@ -2810,7 +2777,7 @@ local selectModeLabel = Instance.new("TextLabel")
 selectModeLabel.Name = "SelectModeLabel"
 selectModeLabel.Parent = teleportPage
 selectModeLabel.BackgroundTransparency = 1
-selectModeLabel.Position = UDim2.new(0, px(30), 0, px(176))
+selectModeLabel.Position = UDim2.new(0, px(30), 0, px(104))
 selectModeLabel.Size = UDim2.new(0, px(80), 0, px(12))
 selectModeLabel.Text = "选择物品 (点击)"
 selectModeLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2822,7 +2789,7 @@ local selectSameBtn = Instance.new("TextButton")
 selectSameBtn.Name = "SelectSame"
 selectSameBtn.Parent = teleportPage
 selectSameBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBtn.Position = UDim2.new(0, px(4), 0, px(196))
+selectSameBtn.Position = UDim2.new(0, px(4), 0, px(124))
 selectSameBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBtn.BorderSizePixel = 0
 selectSameBtn.Text = "选择同名物品"
@@ -2869,7 +2836,7 @@ local clearSelectedBtn = Instance.new("TextButton")
 clearSelectedBtn.Name = "ClearSelected"
 clearSelectedBtn.Parent = teleportPage
 clearSelectedBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(216))
+clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(144))
 clearSelectedBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearSelectedBtn.BorderSizePixel = 0
 clearSelectedBtn.Text = "删除所有选中"
@@ -2891,7 +2858,7 @@ local startTeleportItemsBtn = Instance.new("TextButton")
 startTeleportItemsBtn.Name = "StartTeleportItems"
 startTeleportItemsBtn.Parent = teleportPage
 startTeleportItemsBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(236))
+startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(164))
 startTeleportItemsBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 startTeleportItemsBtn.BorderSizePixel = 0
 startTeleportItemsBtn.Text = "开始传送物品"
@@ -3181,51 +3148,67 @@ teleportOneItem = function(item, targetPos)
 	if item:IsA("BasePart") and item.Parent:IsA("Model") then
 		item = item.Parent
 	end
-	if not (item:IsA("Model") or item:IsA("BasePart")) then return false end
+
+	if not (item:IsA("Model") or item:IsA("BasePart")) then
+		return false
+	end
 
 	local dragRemote = ReplicatedStorage:FindFirstChild("Interaction")
 		and ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
 	if not dragRemote then return false end
 
+	-- 目标：贴地/贴柜台，不要从高空砸下去
 	local tp = typeof(targetPos) == "Vector3" and targetPos or Vector3.new(targetPos.X, targetPos.Y, targetPos.Z)
-	local targetCF = CFrame.new(tp.X, tp.Y + 0.4, tp.Z)
+	local placeY = tp.Y + 0.4
+	local targetCF = CFrame.new(tp.X, placeY, tp.Z)
 
 	local function zeroVel()
-		pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero; hrp.AssemblyAngularVelocity = Vector3.zero end)
-		pcall(function() if hum then hum:ChangeState(Enum.HumanoidStateType.Running) end end)
+		pcall(function()
+			hrp.AssemblyLinearVelocity = Vector3.zero
+			hrp.AssemblyAngularVelocity = Vector3.zero
+		end)
+		pcall(function()
+			if hum then
+				hum:ChangeState(Enum.HumanoidStateType.Running)
+			end
+		end)
 	end
 
+	-- 站到物品旁（同高度，不跳、不自由落体）
 	local pivot = item:IsA("Model") and item:GetPivot() or item.CFrame
-	local stand = pivot.Position + Vector3.new(2.2, 2.2, 0)
+	local stand = pivot.Position + Vector3.new(2.2, 0, 0)
+	stand = Vector3.new(stand.X, pivot.Position.Y + 2.2, stand.Z)
 	hrp.CFrame = CFrame.new(stand)
 	zeroVel()
 	task.wait(0.06)
 
-	-- Begin
-	pcall(function() dragRemote:FireServer("Begin", item, 2) end)
-	task.wait(0.05)
-
-	-- 持续 Refresh，逐步移向目标，持续约 1.5 秒
-	local steps = 30
-	local startCF = item:IsA("Model") and item:GetPivot() or item.CFrame
-	for i = 1, steps do
+	-- 短循环贴到目标，避免长时间拖拽乱飞
+	for _ = 1, 10 do
 		if not item.Parent then break end
-		local alpha = i / steps
-		local interp = startCF:Lerp(targetCF, alpha)
 		pcall(function()
-			if item:IsA("Model") then item:PivotTo(interp) else item.CFrame = interp end
-			dragRemote:FireServer("Refresh", item, 2)
+			dragRemote:FireServer("Begin", item, 5)
+			dragRemote:FireServer("Refresh", item, 5)
 		end)
-		task.wait(0.05)
+		if item:IsA("Model") then
+			pcall(function() item:PivotTo(targetCF) end)
+		else
+			pcall(function() item.CFrame = targetCF end)
+		end
+		pcall(function()
+			dragRemote:FireServer("End", item, 5)
+		end)
+		zeroVel()
+		task.wait(0.035)
 	end
 
-	-- 钉在目标位置再 End
-	pcall(function()
-		if item:IsA("Model") then item:PivotTo(targetCF) else item.CFrame = targetCF end
-		dragRemote:FireServer("Refresh", item, 2)
-	end)
-	task.wait(0.05)
-	pcall(function() dragRemote:FireServer("End", item, 2) end)
+	-- 最终再钉一次，防止弹飞
+	if item.Parent then
+		if item:IsA("Model") then
+			pcall(function() item:PivotTo(targetCF) end)
+		else
+			pcall(function() item.CFrame = targetCF end)
+		end
+	end
 	zeroVel()
 	return true
 end
@@ -4331,46 +4314,47 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 						end)
 					end
 					task.wait(0.15)
-					-- Begin → 持续 Refresh → End
-					local targetCF = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
+					-- 慢拖：约 1.8 秒，步进 0.06
+					local dest = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
 					if dragRemote then
-						pcall(function() dragRemote:FireServer("Begin", target, 2) end)
+						pcall(function() dragRemote:FireServer("Begin", target, 5) end)
 					end
-					task.wait(0.05)
-					local steps = 30
-					local startCF = target:IsA("Model") and target:GetPivot() or target.CFrame
-					for i = 1, steps do
+					local t0 = tick()
+					while tick() - t0 < 1.8 do
 						if not target.Parent then break end
-						local alpha = i / steps
-						local interp = startCF:Lerp(targetCF, alpha)
 						pcall(function()
 							if target:IsA("Model") then
-								target:PivotTo(interp)
+								target:PivotTo(dest)
 							elseif target:IsA("BasePart") then
-								target.CFrame = interp
-							end
-							if dragRemote then
-								dragRemote:FireServer("Refresh", target, 2)
+								target.CFrame = dest
 							end
 						end)
+						if dragRemote then
+							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
+						end
+						task.wait(0.06)
+					end
+					if dragRemote then
+						pcall(function() dragRemote:FireServer("End", target, 5) end)
+					end
+					-- 再钉几次
+					if dragRemote then
+						pcall(function() dragRemote:FireServer("Begin", target, 5) end)
+					end
+					for _ = 1, 8 do
+						if not target.Parent then break end
+						pcall(function()
+							if target:IsA("Model") then
+								target:PivotTo(CFrame.new(originalPos + Vector3.new(0, 0.5, 0)))
+							end
+						end)
+						if dragRemote then
+							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
+						end
 						task.wait(0.05)
 					end
-					-- 钉在目标位置再 End
-					if target.Parent then
-						pcall(function()
-							if target:IsA("Model") then
-								target:PivotTo(targetCF)
-							elseif target:IsA("BasePart") then
-								target.CFrame = targetCF
-							end
-							if dragRemote then
-								dragRemote:FireServer("Refresh", target, 2)
-							end
-						end)
-					end
-					task.wait(0.05)
 					if dragRemote then
-						pcall(function() dragRemote:FireServer("End", target, 2) end)
+						pcall(function() dragRemote:FireServer("End", target, 5) end)
 					end
 					brought = true
 					duck = target
@@ -8858,25 +8842,23 @@ end
 
 local MAGMA_CF = CFrame.new(-1671.5, 268.9, 1259.5)
 
--- 找玩家正在坐的车，返回 car, driverSeat, passSeat
+-- 找自己的车，返回 car, driverSeat, passSeat
 local function magma_findMyCar()
+    -- 找当前正在坐着的车
     local char = speaker.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     local seatPart = hum and hum.SeatPart
-    if not seatPart then
-        return nil, nil, nil
-    end
-    -- 从 seatPart 往上找到车的 Model
-    local node = seatPart
-    while node and node ~= workspace.PlayerModels and node ~= workspace do
-        if node:IsA("Model") then
-            local driver = node:FindFirstChild("DriverSeat", true)
-            local pass = node:FindFirstChild("Seat", true)
-            if driver or pass then
-                return node, driver, pass
-            end
+    if seatPart then
+        -- 往上找到 workspace.PlayerModels 下的顶层 Model
+        local obj = seatPart
+        while obj and obj.Parent ~= workspace.PlayerModels and obj.Parent ~= workspace do
+            obj = obj.Parent
         end
-        node = node.Parent
+        if obj and obj:IsA("Model") then
+            local driver = obj:FindFirstChild("DriverSeat", true)
+            local pass   = obj:FindFirstChild("Seat", true)
+            return obj, driver, pass
+        end
     end
     return nil, nil, nil
 end
@@ -9073,7 +9055,7 @@ do
 
         local car, _, passSeat = magma_findMyCar()
         if not car then
-            magmaStatusLbl.Text = "状态: 你没有在坐车"
+            magmaStatusLbl.Text = "状态: 找不到你的车！"
             return
         end
         if not passSeat then
