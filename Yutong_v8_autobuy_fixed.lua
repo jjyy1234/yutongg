@@ -129,12 +129,12 @@ local function getUIScale()
 	local cam = workspace.CurrentCamera
 	local vp = cam and cam.ViewportSize or Vector2.new(800, 600)
 	local short = math.min(vp.X, vp.Y)
-	return math.clamp(short / 385, 0.75, 1.75)
+	return math.clamp(short / 500, 0.75, 1.35)
 end
 local S = getUIScale()
 local function px(n) return math.floor(n * S + 0.5) end
-local FRAME_W = px(245)
-local FRAME_H = px(208)
+local FRAME_W = px(215)
+local FRAME_H = px(178)
 
 local main = Instance.new("ScreenGui")
 main.Name = "YutongFlyUI"
