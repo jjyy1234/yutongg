@@ -9118,10 +9118,6 @@ do
     local lp = Players.LocalPlayer
     local myName = lp.Name
 
-    local function getTime()
-        return os.date("%H:%M:%S")
-    end
-
     local CREATORS = {
         Bloxyway750 = true, UbwebubewOsas = true,
         Purpleman89001 = true, Bloxyway636 = true,
@@ -9133,6 +9129,10 @@ do
         Le_Abruhxx = true, MythicalWarPotato = true,
         sneakypotato7 = true, Manchron = true,
     }
+
+    local function getTime()
+        return os.date("%H:%M:%S")
+    end
 
     local function spamNotify(msg, kind, count)
         count = count or 10
@@ -9152,7 +9152,6 @@ do
                 local folder = player:WaitForChild(folderName, 10)
                 if not folder then return end
 
-                -- 监控新增（加入白名单/黑名单）
                 folder.ChildAdded:Connect(function(child)
                     local targetName = child.Name
                     local msg, kind
@@ -9177,7 +9176,6 @@ do
                     print("[" .. getTime() .. "] " .. msg)
                 end)
 
-                -- 监控删除（移出白名单/黑名单）
                 folder.ChildRemoved:Connect(function(child)
                     local targetName = child.Name
                     local msg, kind
@@ -9235,6 +9233,78 @@ do
         pcall(function() notify(msg, "info") end)
         print("[" .. getTime() .. "] " .. msg)
     end)
+
+    -- ===== 钱变动监控 =====
+    task.spawn(function()
+        local tx = ReplicatedStorage:FindFirstChild("Transactions")
+        local stc = tx and tx:FindFirstChild("ServerToClient")
+        local fc = stc and stc:FindFirstChild("FundsChanged")
+        if fc and fc:IsA("RemoteEvent") then
+            local lastMoney = nil
+            fc.OnClientEvent:Connect(function(a, b)
+                local newMoney = nil
+                if type(a) == "number" then
+                    newMoney = a
+                elseif type(b) == "number" then
+                    newMoney = b
+                elseif type(a) == "table" and type(a.Money) == "number" then
+                    newMoney = a.Money
+                end
+                if newMoney ~= nil then
+                    if lastMoney ~= nil and newMoney ~= lastMoney then
+                        local diff = newMoney - lastMoney
+                        local sign = diff > 0 and "+" or ""
+                        local msg = "钱变动: " .. sign .. tostring(diff) .. " → " .. tostring(newMoney)
+                        local kind = diff > 0 and "success" or "warn"
+                        pcall(function() notify(msg, kind) end)
+                        print("[" .. getTime() .. "] " .. msg)
+                    end
+                    lastMoney = newMoney
+                end
+            end)
+        end
+    end)
+
+    -- ===== 飞行检测（其他玩家） =====
+    local flyAlerted = {}
+    local FLY_SPEED_THRESHOLD = 50  -- 水平速度超过这个值视为飞行
+    local FLY_HEIGHT_THRESHOLD = 15 -- 离地高度超过这个值才检测速度
+    local FLY_COOLDOWN = 10         -- 同一玩家10秒内只提示一次
+
+    task.spawn(function()
+        while true do
+            task.wait(1)
+            for _, player in ipairs(Players:GetPlayers()) do
+                if player == lp then continue end
+                local char = player.Character
+                if not char then continue end
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChild("Humanoid")
+                if not hrp or not hum then continue end
+
+                -- 检查离地高度
+                local pos = hrp.Position
+                local rayResult = workspace:Raycast(pos, Vector3.new(0, -FLY_HEIGHT_THRESHOLD, 0))
+                if rayResult then continue end  -- 离地不够高，跳过
+
+                -- 检查水平速度
+                local vel = hrp.AssemblyLinearVelocity
+                local hSpeed = Vector2.new(vel.X, vel.Z).Magnitude
+
+                if hSpeed > FLY_SPEED_THRESHOLD then
+                    local now = os.clock()
+                    local last = flyAlerted[player.Name]
+                    if not last or (now - last) > FLY_COOLDOWN then
+                        flyAlerted[player.Name] = now
+                        local msg = player.Name .. " 正在飞行 脚本!!!"
+                        pcall(function() notify(msg, "error") end)
+                        print("[" .. getTime() .. "] " .. msg)
+                    end
+                end
+            end
+        end
+    end)
+
 end
 -- ===================== 玩家监控模块结束 =====================
 selectTab(1)
