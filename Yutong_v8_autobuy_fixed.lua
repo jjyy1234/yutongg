@@ -754,10 +754,6 @@ for i = 1, TAB_COUNT do
 	page.CanvasSize = UDim2.new(0, 0, 0, 400)
 	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	page.BorderSizePixel = 0
-	local pageLayout = Instance.new("UIListLayout")
-	pageLayout.Parent = page
-	pageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-	pageLayout.Padding = UDim.new(0, px(2))
 	pages[i] = page
 end
 
@@ -1041,95 +1037,6 @@ local function StopLavaDelete()
 		lavaDescendantAddedConn = nil
 	end
 end
-
--- ===== TreeNode 折叠节点 UI =====
-local TN_HEADER_H = px(18)
-local TN_GAP = px(2)
-
-local function createTreeNodeSection(parent, title, contentHeight, expanded, order)
-	local section = Instance.new("Frame")
-	section.Name = "TNSection_" .. tostring(order)
-	section.Parent = parent
-	section.Size = UDim2.new(1, 0, 0, TN_HEADER_H + (expanded and (contentHeight + TN_GAP) or 0))
-	section.BackgroundTransparency = 1
-	section.ClipsDescendants = true
-	section.LayoutOrder = order or 0
-
-	local header = Instance.new("TextButton")
-	header.Name = "Header"
-	header.Parent = section
-	header.Size = UDim2.new(1, 0, 0, TN_HEADER_H)
-	header.Position = UDim2.new(0, 0, 0, 0)
-	header.BackgroundColor3 = Color3.fromRGB(45, 42, 50)
-	header.BorderSizePixel = 0
-	header.Text = (expanded and "▼ " or "▶ ") .. title
-	header.TextColor3 = Color3.fromRGB(220, 210, 228)
-	header.Font = Enum.Font.GothamBold
-	header.TextSize = px(9)
-	header.TextXAlignment = Enum.TextXAlignment.Left
-	header.AutoButtonColor = false
-	header.ZIndex = 10
-	Instance.new("UICorner", header).CornerRadius = UDim.new(0, px(4))
-
-	local content = Instance.new("Frame")
-	content.Name = "Content"
-	content.Parent = section
-	content.Size = UDim2.new(1, 0, 0, contentHeight)
-	content.Position = UDim2.new(0, 0, 0, TN_HEADER_H + TN_GAP)
-	content.BackgroundTransparency = 1
-	content.Visible = expanded
-
-	local isExpanded = expanded
-
-	local function updateSection()
-		if isExpanded then
-			header.Text = "▼ " .. title
-			content.Visible = true
-			section.Size = UDim2.new(1, 0, 0, TN_HEADER_H + TN_GAP + contentHeight)
-		else
-			header.Text = "▶ " .. title
-			content.Visible = false
-			section.Size = UDim2.new(1, 0, 0, TN_HEADER_H)
-		end
-	end
-
-	header.MouseButton1Click:Connect(function()
-		isExpanded = not isExpanded
-		updateSection()
-	end)
-
-	return content, section, updateSection
-end
-
-
--- ===== TreeNode 重组：把各页按钮分组到折叠节点 =====
--- 通用函数：把 page 的直接子元素按 Y 范围分组到 TreeNode
-local function groupToTreeNode(page, groups)
-	-- groups = {{title, yStart, yEnd, contentHeight, order}, ...}
-	local sections = {}
-	for _, g in ipairs(groups) do
-		local content, sec = createTreeNodeSection(page, g[1], g[4], false, g[5])
-		table.insert(sections, {content = content, sec = sec, yStart = g[2], yEnd = g[3], baseY = g[2]})
-	end
-	local children = {}
-	for _, child in ipairs(page:GetChildren()) do
-		if not string.find(child.Name, "^TNSection_") and child:IsA("GuiObject") and not child:IsA("UIListLayout") then
-			table.insert(children, child)
-		end
-	end
-	for _, child in ipairs(children) do
-		local y = child.Position.Y.Offset
-		for _, sec in ipairs(sections) do
-			if y >= sec.yStart and y < sec.yEnd then
-				child.Parent = sec.content
-				child.Position = UDim2.new(child.Position.X.Scale, child.Position.X.Offset, 0, y - sec.baseY)
-				break
-			end
-		end
-	end
-end
-
-
 
 local function createToggle(parent, positionX, positionY, initialState, onToggle)
 	local toggleWidth = px(20)
@@ -1549,10 +1456,53 @@ local fogToggle = createToggle(shadowFogBar, px(118), px(2), false, function(on)
 	end
 end)
 
+local lowerBridgeBtn = Instance.new("TextButton")
+lowerBridgeBtn.Parent = homePage
+lowerBridgeBtn.Size = UDim2.new(1, -px(10), 0, px(18))
+lowerBridgeBtn.Position = UDim2.new(0, px(5), 0, px(224))
+lowerBridgeBtn.BackgroundColor3 = Color3.fromRGB(100, 180, 255)
+lowerBridgeBtn.BorderSizePixel = 0
+lowerBridgeBtn.Text = "Lower Bridge"
+lowerBridgeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+lowerBridgeBtn.Font = Enum.Font.GothamBold
+lowerBridgeBtn.TextSize = px(9)
+lowerBridgeBtn.AutoButtonColor = false
+Instance.new("UICorner", lowerBridgeBtn).CornerRadius = UDim.new(0, px(4))
+
+lowerBridgeBtn.MouseButton1Click:Connect(function()
+	local token = "t?n4ghq6PsJ!dX%NNNb"
+	local bridgeRemote = ReplicatedStorage:FindFirstChild("Interaction") and ReplicatedStorage.Interaction:FindFirstChild("LowerBridge")
+	if bridgeRemote then
+		pcall(function() bridgeRemote:FireServer(token, "99999999") end)
+		notify("YUTONG", "LowerBridge sent")
+	end
+end)
+
+local requestMaxLandBtn = Instance.new("TextButton")
+requestMaxLandBtn.Parent = homePage
+requestMaxLandBtn.Size = UDim2.new(1, -px(10), 0, px(18))
+requestMaxLandBtn.Position = UDim2.new(0, px(5), 0, px(244))
+requestMaxLandBtn.BackgroundColor3 = Color3.fromRGB(100, 220, 150)
+requestMaxLandBtn.BorderSizePixel = 0
+requestMaxLandBtn.Text = "Request Max Land"
+requestMaxLandBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+requestMaxLandBtn.Font = Enum.Font.GothamBold
+requestMaxLandBtn.TextSize = px(9)
+requestMaxLandBtn.AutoButtonColor = false
+Instance.new("UICorner", requestMaxLandBtn).CornerRadius = UDim.new(0, px(4))
+
+requestMaxLandBtn.MouseButton1Click:Connect(function()
+	local landRemote = ReplicatedStorage:FindFirstChild("Interaction") and ReplicatedStorage.Interaction:FindFirstChild("RequestMaxLand")
+	if landRemote then
+		pcall(function() landRemote:FireServer() end)
+		notify("YUTONG", "RequestMaxLand sent")
+	end
+end)
+
 local rejoinBtn = Instance.new("TextButton")
 rejoinBtn.Parent = homePage
 rejoinBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-rejoinBtn.Position = UDim2.new(0, px(5), 0, px(224))
+rejoinBtn.Position = UDim2.new(0, px(5), 0, px(264))
 rejoinBtn.BackgroundColor3 = Color3.fromRGB(200, 180, 220)
 rejoinBtn.BorderSizePixel = 0
 rejoinBtn.Text = "重新加入服务器"
@@ -1573,7 +1523,7 @@ end)
 local copyServerLinkBtn = Instance.new("TextButton")
 copyServerLinkBtn.Parent = homePage
 copyServerLinkBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-copyServerLinkBtn.Position = UDim2.new(0, px(5), 0, px(244))
+copyServerLinkBtn.Position = UDim2.new(0, px(5), 0, px(284))
 copyServerLinkBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 copyServerLinkBtn.BorderSizePixel = 0
 copyServerLinkBtn.Text = "复制服务器链接"
@@ -1587,7 +1537,7 @@ Instance.new("UICorner", copyServerLinkBtn).CornerRadius = UDim.new(0, px(4))
 local hopServerBtn = Instance.new("TextButton")
 hopServerBtn.Parent = homePage
 hopServerBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-hopServerBtn.Position = UDim2.new(0, px(5), 0, px(264))
+hopServerBtn.Position = UDim2.new(0, px(5), 0, px(304))
 hopServerBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 150)
 hopServerBtn.BorderSizePixel = 0
 hopServerBtn.Text = "Hop服务器(最少人)"
@@ -1600,7 +1550,7 @@ Instance.new("UICorner", hopServerBtn).CornerRadius = UDim.new(0, px(4))
 copyJobIdBtn = Instance.new("TextButton")
 copyJobIdBtn.Parent = homePage
 copyJobIdBtn.Size = UDim2.new(1, -px(10), 0, px(18))
-copyJobIdBtn.Position = UDim2.new(0, px(5), 0, px(284))
+copyJobIdBtn.Position = UDim2.new(0, px(5), 0, px(324))
 copyJobIdBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 copyJobIdBtn.BorderSizePixel = 0
 copyJobIdBtn.Text = "复制服务器ID"
@@ -1613,7 +1563,7 @@ Instance.new("UICorner", copyJobIdBtn).CornerRadius = UDim.new(0, px(4))
 jobIdBox = Instance.new("TextBox")
 jobIdBox.Parent = homePage
 jobIdBox.Size = UDim2.new(0.62, -px(6), 0, px(18))
-jobIdBox.Position = UDim2.new(0, px(5), 0, px(304))
+jobIdBox.Position = UDim2.new(0, px(5), 0, px(344))
 jobIdBox.BackgroundColor3 = Color3.fromRGB(245, 240, 248)
 jobIdBox.BorderSizePixel = 0
 jobIdBox.Text = ""
@@ -1627,7 +1577,7 @@ Instance.new("UICorner", jobIdBox).CornerRadius = UDim.new(0, px(4))
 joinJobBtn = Instance.new("TextButton")
 joinJobBtn.Parent = homePage
 joinJobBtn.Size = UDim2.new(0.38, -px(8), 0, px(18))
-joinJobBtn.Position = UDim2.new(0.62, 0, 0, px(304))
+joinJobBtn.Position = UDim2.new(0.62, 0, 0, px(344))
 joinJobBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
 joinJobBtn.BorderSizePixel = 0
 joinJobBtn.Text = "进入该服"
@@ -3064,67 +3014,51 @@ teleportOneItem = function(item, targetPos)
 	if item:IsA("BasePart") and item.Parent:IsA("Model") then
 		item = item.Parent
 	end
-
-	if not (item:IsA("Model") or item:IsA("BasePart")) then
-		return false
-	end
+	if not (item:IsA("Model") or item:IsA("BasePart")) then return false end
 
 	local dragRemote = ReplicatedStorage:FindFirstChild("Interaction")
 		and ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
 	if not dragRemote then return false end
 
-	-- 目标：贴地/贴柜台，不要从高空砸下去
 	local tp = typeof(targetPos) == "Vector3" and targetPos or Vector3.new(targetPos.X, targetPos.Y, targetPos.Z)
-	local placeY = tp.Y + 0.4
-	local targetCF = CFrame.new(tp.X, placeY, tp.Z)
+	local targetCF = CFrame.new(tp.X, tp.Y + 0.4, tp.Z)
 
 	local function zeroVel()
-		pcall(function()
-			hrp.AssemblyLinearVelocity = Vector3.zero
-			hrp.AssemblyAngularVelocity = Vector3.zero
-		end)
-		pcall(function()
-			if hum then
-				hum:ChangeState(Enum.HumanoidStateType.Running)
-			end
-		end)
+		pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero; hrp.AssemblyAngularVelocity = Vector3.zero end)
+		pcall(function() if hum then hum:ChangeState(Enum.HumanoidStateType.Running) end end)
 	end
 
-	-- 站到物品旁（同高度，不跳、不自由落体）
 	local pivot = item:IsA("Model") and item:GetPivot() or item.CFrame
-	local stand = pivot.Position + Vector3.new(2.2, 0, 0)
-	stand = Vector3.new(stand.X, pivot.Position.Y + 2.2, stand.Z)
+	local stand = pivot.Position + Vector3.new(2.2, 2.2, 0)
 	hrp.CFrame = CFrame.new(stand)
 	zeroVel()
 	task.wait(0.06)
 
-	-- 短循环贴到目标，避免长时间拖拽乱飞
-	for _ = 1, 10 do
+	-- Begin
+	pcall(function() dragRemote:FireServer("Begin", item, 2) end)
+	task.wait(0.05)
+
+	-- 持续 Refresh，逐步移向目标，持续约 1.5 秒
+	local steps = 30
+	local startCF = item:IsA("Model") and item:GetPivot() or item.CFrame
+	for i = 1, steps do
 		if not item.Parent then break end
+		local alpha = i / steps
+		local interp = startCF:Lerp(targetCF, alpha)
 		pcall(function()
-			dragRemote:FireServer("Begin", item, 5)
-			dragRemote:FireServer("Refresh", item, 5)
+			if item:IsA("Model") then item:PivotTo(interp) else item.CFrame = interp end
+			dragRemote:FireServer("Refresh", item, 2)
 		end)
-		if item:IsA("Model") then
-			pcall(function() item:PivotTo(targetCF) end)
-		else
-			pcall(function() item.CFrame = targetCF end)
-		end
-		pcall(function()
-			dragRemote:FireServer("End", item, 5)
-		end)
-		zeroVel()
-		task.wait(0.035)
+		task.wait(0.05)
 	end
 
-	-- 最终再钉一次，防止弹飞
-	if item.Parent then
-		if item:IsA("Model") then
-			pcall(function() item:PivotTo(targetCF) end)
-		else
-			pcall(function() item.CFrame = targetCF end)
-		end
-	end
+	-- 钉在目标位置再 End
+	pcall(function()
+		if item:IsA("Model") then item:PivotTo(targetCF) else item.CFrame = targetCF end
+		dragRemote:FireServer("Refresh", item, 2)
+	end)
+	task.wait(0.05)
+	pcall(function() dragRemote:FireServer("End", item, 2) end)
 	zeroVel()
 	return true
 end
@@ -3371,11 +3305,6 @@ task.spawn(function()
 		for _, ch in ipairs(buyPage:GetChildren()) do
 			ch:Destroy()
 		end
-		-- 重新添加 UIListLayout（清空时被一起删了）
-		local buyPageLayout = Instance.new("UIListLayout")
-		buyPageLayout.Parent = buyPage
-		buyPageLayout.SortOrder = Enum.SortOrder.LayoutOrder
-		buyPageLayout.Padding = UDim.new(0, px(2))
 
 		local status = Instance.new("TextLabel")
 		status.Parent = buyPage
@@ -4139,11 +4068,6 @@ task.spawn(function()
 		end)
 
 
-		-- TreeNode 重组购买页
-		groupToTreeNode(buyPage, {
-		{"🛒 自动购买", 0, px(118), px(118), 1},
-		{"📐 蓝图", px(118), px(200), px(22), 2},
-		})
 		doScan()
 	end)
 	if not ok then
@@ -4240,47 +4164,46 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 						end)
 					end
 					task.wait(0.15)
-					-- 慢拖：约 1.8 秒，步进 0.06
-					local t0 = tick()
-					while tick() - t0 < 1.8 do
-						if not target.Parent then break end
-						if dragRemote then
-							pcall(function()
-								dragRemote:FireServer("Begin", target, 5)
-								dragRemote:FireServer("Refresh", target, 5)
-							end)
-						end
-						local dest = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
-						pcall(function()
-							if target:IsA("Model") then
-								target:PivotTo(dest)
-							elseif target:IsA("BasePart") then
-								target.CFrame = dest
-							end
-						end)
-						if dragRemote then
-							pcall(function()
-								dragRemote:FireServer("End", target, 5)
-							end)
-						end
-						task.wait(0.06)
+					-- Begin → 持续 Refresh → End
+					local targetCF = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
+					if dragRemote then
+						pcall(function() dragRemote:FireServer("Begin", target, 2) end)
 					end
-					-- 再钉几次
-					for _ = 1, 8 do
+					task.wait(0.05)
+					local steps = 30
+					local startCF = target:IsA("Model") and target:GetPivot() or target.CFrame
+					for i = 1, steps do
 						if not target.Parent then break end
+						local alpha = i / steps
+						local interp = startCF:Lerp(targetCF, alpha)
 						pcall(function()
-							if dragRemote then
-								dragRemote:FireServer("Begin", target, 5)
-								dragRemote:FireServer("Refresh", target, 5)
-							end
 							if target:IsA("Model") then
-								target:PivotTo(CFrame.new(originalPos + Vector3.new(0, 0.5, 0)))
+								target:PivotTo(interp)
+							elseif target:IsA("BasePart") then
+								target.CFrame = interp
 							end
 							if dragRemote then
-								dragRemote:FireServer("End", target, 5)
+								dragRemote:FireServer("Refresh", target, 2)
 							end
 						end)
 						task.wait(0.05)
+					end
+					-- 钉在目标位置再 End
+					if target.Parent then
+						pcall(function()
+							if target:IsA("Model") then
+								target:PivotTo(targetCF)
+							elseif target:IsA("BasePart") then
+								target.CFrame = targetCF
+							end
+							if dragRemote then
+								dragRemote:FireServer("Refresh", target, 2)
+							end
+						end)
+					end
+					task.wait(0.05)
+					if dragRemote then
+						pcall(function() dragRemote:FireServer("End", target, 2) end)
 					end
 					brought = true
 					duck = target
@@ -6119,10 +6042,6 @@ task.spawn(function()
 			status.Text = "日志已清空"
 		end)
 
-		-- TreeNode 重组调试页
-		groupToTreeNode(debugPage, {
-		{"🔧 调试", 0, px(200), px(150), 1},
-		})
 		print("[Yutong] 调试页 OK")
 	end)
 	if not ok then warn("[Yutong] 调试页失败", err) end
@@ -9039,40 +8958,6 @@ do
     end)
 end
 
-
--- 首页
-groupToTreeNode(pages[1], {
-	{"🎮 基础设置", 0, px(162), px(162), 1},
-	{"👥 玩家", px(162), px(224), px(62), 2},
-	{"🌐 服务器", px(224), px(400), px(102), 3},
-})
-
--- 飞行页
-groupToTreeNode(pages[2], {
-	{"✈️ 飞行", 0, px(200), px(130), 1},
-})
-
--- 传送页
-groupToTreeNode(pages[3], {
-	{"📍 地点传送", 0, px(50), px(50), 1},
-	{"📦 物品传送", px(50), px(200), px(120), 2},
-})
-
--- 木头页
-groupToTreeNode(pages[5], {
-	{"🌲 砍树/卖木", 0, px(324), px(324), 1},
-	{"🌳 带来树", px(324), px(375), px(51), 2},
-	{"📦 填充蓝图", px(375), px(420), px(45), 3},
-	{"📊 整理木板", px(420), px(500), px(52), 4},
-})
-
--- 其他页
-groupToTreeNode(pages[6], {
-	{"🦆 鸭子合成", 0, px(144), px(144), 1},
-	{"⚔️ 武器合成", px(144), px(320), px(176), 2},
-	{"🚗 刷粉车", px(320), px(466), px(146), 3},
-	{"🌋 岩浆陷阱", px(466), px(700), px(150), 4},
-})
 
 selectTab(1)
 print("[Yutong] tabs=", TAB_COUNT, "pages=", #pages)
