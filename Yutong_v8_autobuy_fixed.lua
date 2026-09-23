@@ -2681,13 +2681,13 @@ carTeleportBtn.MouseButton1Click:Connect(function()
     local targetCF = CFrame.new(targetPos + Vector3.new(0, 3, 0))
     pcall(function()
         local _r = game:GetService("ReplicatedStorage").Interaction.ClientIsDragging
-        _r:FireServer("Begin", car, 5)
         for i = 1, 15 do
             car:PivotTo(targetCF)
+            _r:FireServer("Begin", car, 5)
             _r:FireServer("Refresh", car, 5)
+            _r:FireServer("End", car, 5)
             task.wait(0.05)
         end
-        _r:FireServer("End", car, 5)
     end)
     carDropdownList.Visible = false
     pcall(function() notify("YUTONG", "车已传送到 " .. loc.name, 2) end)
@@ -3183,8 +3183,7 @@ teleportOneItem = function(item, targetPos)
 	zeroVel()
 	task.wait(0.06)
 
-	-- Begin 一次，循环 Refresh 改坐标，最后 End
-	pcall(function() dragRemote:FireServer("Begin", item, 2) end)
+	-- 每次循环 Begin→Refresh→End
 	for _ = 1, 20 do
 		if not item.Parent then break end
 		if item:IsA("Model") then
@@ -3192,11 +3191,12 @@ teleportOneItem = function(item, targetPos)
 		else
 			pcall(function() item.CFrame = targetCF end)
 		end
-		pcall(function() dragRemote:FireServer("Refresh", item, 2) end)
+		pcall(function() dragRemote:FireServer("Begin", item, 5) end)
+		pcall(function() dragRemote:FireServer("Refresh", item, 5) end)
+		pcall(function() dragRemote:FireServer("End", item, 5) end)
 		zeroVel()
 		task.wait(0.05)
 	end
-	pcall(function() dragRemote:FireServer("End", item, 2) end)
 
 	-- 最终再钉一次，防止弹飞
 	if item.Parent then
@@ -4313,9 +4313,6 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 					task.wait(0.15)
 					-- 慢拖：约 1.8 秒，步进 0.06
 					local dest = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
-					if dragRemote then
-						pcall(function() dragRemote:FireServer("Begin", target, 5) end)
-					end
 					local t0 = tick()
 					while tick() - t0 < 1.8 do
 						if not target.Parent then break end
@@ -4327,17 +4324,13 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 							end
 						end)
 						if dragRemote then
+							pcall(function() dragRemote:FireServer("Begin", target, 5) end)
 							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
+							pcall(function() dragRemote:FireServer("End", target, 5) end)
 						end
 						task.wait(0.06)
 					end
-					if dragRemote then
-						pcall(function() dragRemote:FireServer("End", target, 5) end)
-					end
 					-- 再钉几次
-					if dragRemote then
-						pcall(function() dragRemote:FireServer("Begin", target, 5) end)
-					end
 					for _ = 1, 8 do
 						if not target.Parent then break end
 						pcall(function()
@@ -4346,12 +4339,11 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 							end
 						end)
 						if dragRemote then
+							pcall(function() dragRemote:FireServer("Begin", target, 5) end)
 							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
+							pcall(function() dragRemote:FireServer("End", target, 5) end)
 						end
 						task.wait(0.05)
-					end
-					if dragRemote then
-						pcall(function() dragRemote:FireServer("End", target, 5) end)
 					end
 					brought = true
 					duck = target
@@ -9113,207 +9105,5 @@ do
 end
 
 
--- ===================== 玩家监控模块 =====================
-do
-    local lp = Players.LocalPlayer
-    local myName = lp.Name
-
-    local CREATORS = {
-        Bloxyway750 = true, UbwebubewOsas = true,
-        Purpleman89001 = true, Bloxyway636 = true,
-    }
-    local ADMINS = {
-        Plantomic56 = true, ["1000xRESISTANCE"] = true,
-        PLANTOMICCLOTHING = true, plantomic13 = true,
-        A1YusifKarim = true, dakota_4194 = true,
-        Le_Abruhxx = true, MythicalWarPotato = true,
-        sneakypotato7 = true, Manchron = true,
-    }
-
-    local function getTime()
-        return os.date("%H:%M:%S")
-    end
-
-    local function spamNotify(msg, kind, count)
-        count = count or 10
-        task.spawn(function()
-            for i = 1, count do
-                pcall(function() notify(msg, kind) end)
-                print("[" .. getTime() .. "] " .. msg)
-                task.wait(0.5)
-            end
-        end)
-    end
-
-    local function watchPlayerLists(player)
-        local function watchFolder(folderName, isBlack)
-            task.spawn(function()
-                local folder = player:WaitForChild(folderName, 10)
-                if not folder then return end
-
-                folder.ChildAdded:Connect(function(child)
-                    local targetName = child.Name
-                    local msg, kind
-                    if targetName == myName then
-                        if isBlack then
-                            msg = player.Name .. " 拉黑了你"
-                            kind = "error"
-                        else
-                            msg = player.Name .. " 把你加入了白名单"
-                            kind = "success"
-                        end
-                    else
-                        if isBlack then
-                            msg = player.Name .. " 拉黑 " .. targetName
-                            kind = "warn"
-                        else
-                            msg = player.Name .. " 位 " .. targetName .. " 白名单"
-                            kind = "info"
-                        end
-                    end
-                    pcall(function() notify(msg, kind) end)
-                    print("[" .. getTime() .. "] " .. msg)
-                end)
-
-                folder.ChildRemoved:Connect(function(child)
-                    local targetName = child.Name
-                    local msg, kind
-                    if targetName == myName then
-                        if isBlack then
-                            msg = player.Name .. " 解除了对你的拉黑"
-                            kind = "success"
-                        else
-                            msg = player.Name .. " 把你移出了白名单"
-                            kind = "warn"
-                        end
-                    else
-                        if isBlack then
-                            msg = player.Name .. " 解除拉黑 " .. targetName
-                            kind = "info"
-                        else
-                            msg = player.Name .. " 移除 " .. targetName .. " 白名单"
-                            kind = "info"
-                        end
-                    end
-                    pcall(function() notify(msg, kind) end)
-                    print("[" .. getTime() .. "] " .. msg)
-                end)
-            end)
-        end
-
-        watchFolder("WhitelistFolder", false)
-        watchFolder("BlacklistFolder", true)
-    end
-
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= lp then
-            watchPlayerLists(player)
-        end
-    end
-
-    Players.PlayerAdded:Connect(function(player)
-        local name = player.Name
-        if CREATORS[name] then
-            spamNotify("创作者 " .. name .. " 加入了服务器!!!", "warn", 10)
-        elseif ADMINS[name] then
-            spamNotify("管理员 " .. name .. " 已加入服务器", "warn", 10)
-        else
-            local msg = name .. " 加入了服务器"
-            pcall(function() notify(msg, "info") end)
-            print("[" .. getTime() .. "] " .. msg)
-        end
-        watchPlayerLists(player)
-    end)
-
-    Players.PlayerRemoving:Connect(function(player)
-        local msg = player.Name .. " 离开了服务器"
-        pcall(function() notify(msg, "info") end)
-        print("[" .. getTime() .. "] " .. msg)
-    end)
-
-    -- ===== 钱变动监控 =====
-    task.spawn(function()
-        local tx = ReplicatedStorage:FindFirstChild("Transactions")
-        local stc = tx and tx:FindFirstChild("ServerToClient")
-        local fc = stc and stc:FindFirstChild("FundsChanged")
-        if fc and fc:IsA("RemoteEvent") then
-            local lastMoney = nil
-            fc.OnClientEvent:Connect(function(a, b)
-                local newMoney = nil
-                if type(a) == "number" then
-                    newMoney = a
-                elseif type(b) == "number" then
-                    newMoney = b
-                elseif type(a) == "table" and type(a.Money) == "number" then
-                    newMoney = a.Money
-                end
-                if newMoney ~= nil then
-                    if lastMoney ~= nil and newMoney ~= lastMoney then
-                        local diff = newMoney - lastMoney
-                        local sign = diff > 0 and "+" or ""
-                        local msg = "钱变动: " .. sign .. tostring(diff) .. " → " .. tostring(newMoney)
-                        local kind = diff > 0 and "success" or "warn"
-                        pcall(function() notify(msg, kind) end)
-                        print("[" .. getTime() .. "] " .. msg)
-                    end
-                    lastMoney = newMoney
-                end
-            end)
-        end
-    end)
-
-    -- ===== 飞行检测（其他玩家，坐车不算） =====
-    local flyAlerted = {}
-    local FLY_SPEED_THRESHOLD = 50
-    local FLY_COOLDOWN = 10
-
-    local function isPlayerInVehicle(character)
-        local hum = character:FindFirstChildOfClass("Humanoid")
-        if not hum then return false end
-        local seatPart = hum.SeatPart
-        if not seatPart then return false end
-        -- 检查 SeatPart 是否是车辆的 Seat（父级 Model 有 VehicleSeat 或普通 Seat 且在 PlayerModels 里）
-        local model = seatPart:FindFirstAncestorOfClass("Model")
-        if not model then return false end
-        -- 有 VehicleSeat 就是车
-        if model:FindFirstChildOfClass("VehicleSeat") then return true end
-        -- 或者父级在 PlayerModels 且有 Type == "Vehicle"
-        local typeVal = model:FindFirstChild("Type")
-        if typeVal and typeVal:IsA("StringValue") and typeVal.Value == "Vehicle" then return true end
-        return false
-    end
-
-    task.spawn(function()
-        while true do
-            task.wait(1)
-            for _, player in ipairs(Players:GetPlayers()) do
-                if player == lp then continue end
-                local char = player.Character
-                if not char then continue end
-                local hrp = char:FindFirstChild("HumanoidRootPart")
-                if not hrp then continue end
-
-                -- 坐在车上不算
-                if isPlayerInVehicle(char) then continue end
-
-                local vel = hrp.AssemblyLinearVelocity
-                local hSpeed = Vector2.new(vel.X, vel.Z).Magnitude
-
-                if hSpeed > FLY_SPEED_THRESHOLD then
-                    local now = os.clock()
-                    local last = flyAlerted[player.Name]
-                    if not last or (now - last) > FLY_COOLDOWN then
-                        flyAlerted[player.Name] = now
-                        local msg = player.Name .. " 正在飞行 脚本!!!"
-                        pcall(function() notify(msg, "error") end)
-                        print("[" .. getTime() .. "] " .. msg)
-                    end
-                end
-            end
-        end
-    end)
-
-end
--- ===================== 玩家监控模块结束 =====================
 selectTab(1)
 print("[Yutong] tabs=", TAB_COUNT, "pages=", #pages)
