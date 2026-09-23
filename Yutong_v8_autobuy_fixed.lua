@@ -9268,7 +9268,6 @@ do
     -- ===== 飞行检测（其他玩家） =====
     local flyAlerted = {}
     local FLY_SPEED_THRESHOLD = 50  -- 水平速度超过这个值视为飞行
-    local FLY_HEIGHT_THRESHOLD = 15 -- 离地高度超过这个值才检测速度
     local FLY_COOLDOWN = 10         -- 同一玩家10秒内只提示一次
 
     task.spawn(function()
@@ -9281,11 +9280,6 @@ do
                 local hrp = char:FindFirstChild("HumanoidRootPart")
                 local hum = char:FindFirstChild("Humanoid")
                 if not hrp or not hum then continue end
-
-                -- 检查离地高度
-                local pos = hrp.Position
-                local rayResult = workspace:Raycast(pos, Vector3.new(0, -FLY_HEIGHT_THRESHOLD, 0))
-                if rayResult then continue end  -- 离地不够高，跳过
 
                 -- 检查水平速度
                 local vel = hrp.AssemblyLinearVelocity
