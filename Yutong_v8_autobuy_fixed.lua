@@ -2457,6 +2457,7 @@ local teleportLocations = {
 	{ name = "26. 石头商店", pos = Vector3.new(-2359.0, 302.3, -1853.1) },
 	{ name = "27. 海边商店", pos = Vector3.new(6698.3, 2.5, -3563.8) },
 	{ name = "28. 黑市", pos = Vector3.new(-83.1, 62.2, 1408.3) },
+	{ name = "29. 裂纹木所在地", pos = Vector3.new(-7644.950, 321.574, 4242.902) },
 }
 
 local selectedTeleportIndex = 1
@@ -2696,7 +2697,7 @@ local itemTeleportLabel = Instance.new("TextLabel")
 itemTeleportLabel.Name = "ItemTeleportLabel"
 itemTeleportLabel.Parent = teleportPage
 itemTeleportLabel.BackgroundTransparency = 1
-itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(120))
+itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(122))
 itemTeleportLabel.Size = UDim2.new(1, -px(8), 0, px(12))
 itemTeleportLabel.Text = "物品传送 (Owner: 自己)"
 itemTeleportLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2708,7 +2709,7 @@ local setPointBtn = Instance.new("TextButton")
 setPointBtn.Name = "SetPoint"
 setPointBtn.Parent = teleportPage
 setPointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-setPointBtn.Position = UDim2.new(0, px(4), 0, px(64))
+setPointBtn.Position = UDim2.new(0, px(4), 0, px(136))
 setPointBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 setPointBtn.BorderSizePixel = 0
 setPointBtn.Text = "设置传送点"
@@ -2747,7 +2748,7 @@ local deletePointBtn = Instance.new("TextButton")
 deletePointBtn.Name = "DeletePoint"
 deletePointBtn.Parent = teleportPage
 deletePointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-deletePointBtn.Position = UDim2.new(0, px(4), 0, px(84))
+deletePointBtn.Position = UDim2.new(0, px(4), 0, px(158))
 deletePointBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 deletePointBtn.BorderSizePixel = 0
 deletePointBtn.Text = "删除传送点"
@@ -2766,7 +2767,7 @@ deletePointBtn.MouseButton1Click:Connect(function()
 	pcall(function() notify("已清除传送点", "info") end)
 end)
 
-local selectModeToggle = createToggle(teleportPage, px(4), px(104), false, function(on)
+local selectModeToggle = createToggle(teleportPage, px(4), px(180), false, function(on)
 	selectMode = on
 	pcall(function()
 		notify(on and "选择模式：开 · 点击物品选中" or "选择模式：关", on and "success" or "info")
@@ -2777,7 +2778,7 @@ local selectModeLabel = Instance.new("TextLabel")
 selectModeLabel.Name = "SelectModeLabel"
 selectModeLabel.Parent = teleportPage
 selectModeLabel.BackgroundTransparency = 1
-selectModeLabel.Position = UDim2.new(0, px(30), 0, px(104))
+selectModeLabel.Position = UDim2.new(0, px(30), 0, px(180))
 selectModeLabel.Size = UDim2.new(0, px(80), 0, px(12))
 selectModeLabel.Text = "选择物品 (点击)"
 selectModeLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2789,7 +2790,7 @@ local selectSameBtn = Instance.new("TextButton")
 selectSameBtn.Name = "SelectSame"
 selectSameBtn.Parent = teleportPage
 selectSameBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBtn.Position = UDim2.new(0, px(4), 0, px(124))
+selectSameBtn.Position = UDim2.new(0, px(4), 0, px(202))
 selectSameBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBtn.BorderSizePixel = 0
 selectSameBtn.Text = "选择同名物品"
@@ -2836,7 +2837,7 @@ local clearSelectedBtn = Instance.new("TextButton")
 clearSelectedBtn.Name = "ClearSelected"
 clearSelectedBtn.Parent = teleportPage
 clearSelectedBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(144))
+clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(224))
 clearSelectedBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearSelectedBtn.BorderSizePixel = 0
 clearSelectedBtn.Text = "删除所有选中"
@@ -2858,7 +2859,7 @@ local startTeleportItemsBtn = Instance.new("TextButton")
 startTeleportItemsBtn.Name = "StartTeleportItems"
 startTeleportItemsBtn.Parent = teleportPage
 startTeleportItemsBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(164))
+startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(246))
 startTeleportItemsBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 startTeleportItemsBtn.BorderSizePixel = 0
 startTeleportItemsBtn.Text = "开始传送物品"
@@ -3182,24 +3183,20 @@ teleportOneItem = function(item, targetPos)
 	zeroVel()
 	task.wait(0.06)
 
-	-- 短循环贴到目标，避免长时间拖拽乱飞
-	for _ = 1, 10 do
+	-- Begin 一次，循环 Refresh 改坐标，最后 End
+	pcall(function() dragRemote:FireServer("Begin", item, 2) end)
+	for _ = 1, 20 do
 		if not item.Parent then break end
-		pcall(function()
-			dragRemote:FireServer("Begin", item, 5)
-			dragRemote:FireServer("Refresh", item, 5)
-		end)
 		if item:IsA("Model") then
 			pcall(function() item:PivotTo(targetCF) end)
 		else
 			pcall(function() item.CFrame = targetCF end)
 		end
-		pcall(function()
-			dragRemote:FireServer("End", item, 5)
-		end)
+		pcall(function() dragRemote:FireServer("Refresh", item, 2) end)
 		zeroVel()
-		task.wait(0.035)
+		task.wait(0.05)
 	end
+	pcall(function() dragRemote:FireServer("End", item, 2) end)
 
 	-- 最终再钉一次，防止弹飞
 	if item.Parent then
@@ -3293,7 +3290,7 @@ local function findCounterInStore(storeModel)
 	if not storeModel then return WOODRUS_COUNTER end
 	-- 固定柜台
 	if storeModel.Name == "PlantomicsChoice" then
-		return Vector3.new(189.2, 12.8, -2662.5)
+		return Vector3.new(189.461, 13.001, -2662.420)
 	end
 	local best, bestDist = nil, 9999
 	local center = getModelPos(storeModel) or WOODRUS_COUNTER
@@ -4420,9 +4417,9 @@ autoDemonDuckTestBtn.MouseButton1Click:Connect(function()
 		}
 
 local placePos = {
-	Vector3.new(-224.01, 58.40, 940.58),
-	Vector3.new(-232.82, 58.40, 933.19),
-	Vector3.new(-241.93, 58.40, 925.54),
+	Vector3.new(-224.007, 58.400, 940.578),
+	Vector3.new(-232.817, 58.400, 933.186),
+	Vector3.new(-241.933, 58.400, 925.536),
 }
 
 		local mats = identifyMaterials()
@@ -4839,11 +4836,11 @@ autoLunarDuckBtn.MouseButton1Click:Connect(function()
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
 		local originalPos = hrp and hrp.Position
 
-		teleportOneItem(duckAngel, Vector3.new(-7041.8, 391.3, 4906.3))
+		teleportOneItem(duckAngel, Vector3.new(-7041.930, 388.425, 4906.211))
 		task.wait(0.25)
-		teleportOneItem(duck, Vector3.new(-7066.7, 391.4, 4898.7))
+		teleportOneItem(duck, Vector3.new(-7066.732, 388.563, 4898.587))
 		task.wait(0.25)
-		teleportOneItem(duckEvil, Vector3.new(-7091.9, 391.4, 4890.9))
+		teleportOneItem(duckEvil, Vector3.new(-7092.041, 388.535, 4890.808))
 		task.wait(0.8)
 
 		local lunar = findUnownedItem("LunarDuck")
@@ -5299,9 +5296,9 @@ autoTridentBtn.MouseButton1Click:Connect(function()
 			end
 		end
 
-		teleportOneItem(duckAngel, Vector3.new(-360.1, 12.3, -1333.8))
+		teleportOneItem(duckAngel, Vector3.new(-360.293, 11.539, -1333.393))
 		task.wait(0.1)
-		teleportOneItem(lunarDuck, Vector3.new(-371.8, 12.8, -1330.3))
+		teleportOneItem(lunarDuck, Vector3.new(-371.751, 11.939, -1330.322))
 		task.wait(0.1)
 		teleportOneItem(duckEvil, Vector3.new(-383.2, 13.2, -1327.8))
 		task.wait(0.15)
@@ -5417,8 +5414,8 @@ autoEternalBtn.MouseButton1Click:Connect(function()
 		end
 
 		local eternalStation = Vector3.new(-373.8, 12.0, -1340.5)
-		local tridentPos = Vector3.new(-360.1, 12.3, -1333.8)
-		local vengeancePos = Vector3.new(-371.8, 12.8, -1330.3)
+		local tridentPos = Vector3.new(-360.293, 11.539, -1333.393)
+		local vengeancePos = Vector3.new(-371.751, 11.939, -1330.322)
 		local duckEvilPos = Vector3.new(-383.2, 13.2, -1327.8)
 
 		hrp.CFrame = CFrame.new(eternalStation)
@@ -5528,9 +5525,9 @@ autoHellfireBtn.MouseButton1Click:Connect(function()
 				before[obj] = true
 			end
 		end
-		teleportOneItem(trident, Vector3.new(-1755.5, 343.9, 1478.5))
+		teleportOneItem(trident, Vector3.new(-1755.511, 343.352, 1478.463))
 		task.wait(0.25)
-		teleportOneItem(duckEvil, Vector3.new(-1785.6, 343.9, 1495.5))
+		teleportOneItem(duckEvil, Vector3.new(-1785.735, 343.352, 1495.913))
 		task.wait(0.25)
 
 		hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
@@ -5637,7 +5634,7 @@ autoLunarisSwordBtn.MouseButton1Click:Connect(function()
 		end
 		local originalCF = hrp.CFrame
 		local originalPos = hrp.Position
-		local place = Vector3.new(-7648.2, 322.1, 4233.9)
+		local place = Vector3.new(-7648.646, 319.253, 4233.687)
 
 		local core = findOwnedItem("LunarCore")
 		if not core then
@@ -9116,5 +9113,129 @@ do
 end
 
 
+-- ===================== 玩家监控模块 =====================
+do
+    local lp = Players.LocalPlayer
+    local myName = lp.Name
+
+    local function getTime()
+        return os.date("%H:%M:%S")
+    end
+
+    local CREATORS = {
+        Bloxyway750 = true, UbwebubewOsas = true,
+        Purpleman89001 = true, Bloxyway636 = true,
+    }
+    local ADMINS = {
+        Plantomic56 = true, ["1000xRESISTANCE"] = true,
+        PLANTOMICCLOTHING = true, plantomic13 = true,
+        A1YusifKarim = true, dakota_4194 = true,
+        Le_Abruhxx = true, MythicalWarPotato = true,
+        sneakypotato7 = true, Manchron = true,
+    }
+
+    local function spamNotify(msg, kind, count)
+        count = count or 10
+        task.spawn(function()
+            for i = 1, count do
+                pcall(function() notify(msg, kind) end)
+                print("[" .. getTime() .. "] " .. msg)
+                task.wait(0.5)
+            end
+        end)
+    end
+
+    -- 监控单个玩家的白名单/黑名单文件夹
+    local function watchPlayerLists(player)
+        local function watchFolder(folderName, isBlack)
+            task.spawn(function()
+                local folder = player:WaitForChild(folderName, 10)
+                if not folder then return end
+
+                -- 监控新增（加入白名单/黑名单）
+                folder.ChildAdded:Connect(function(child)
+                    local targetName = child.Name
+                    local msg, kind
+                    if targetName == myName then
+                        if isBlack then
+                            msg = player.Name .. " 拉黑了你"
+                            kind = "error"
+                        else
+                            msg = player.Name .. " 把你加入了白名单"
+                            kind = "success"
+                        end
+                    else
+                        if isBlack then
+                            msg = player.Name .. " 拉黑 " .. targetName
+                            kind = "warn"
+                        else
+                            msg = player.Name .. " 位 " .. targetName .. " 白名单"
+                            kind = "info"
+                        end
+                    end
+                    pcall(function() notify(msg, kind) end)
+                    print("[" .. getTime() .. "] " .. msg)
+                end)
+
+                -- 监控删除（移出白名单/黑名单）
+                folder.ChildRemoved:Connect(function(child)
+                    local targetName = child.Name
+                    local msg, kind
+                    if targetName == myName then
+                        if isBlack then
+                            msg = player.Name .. " 解除了对你的拉黑"
+                            kind = "success"
+                        else
+                            msg = player.Name .. " 把你移出了白名单"
+                            kind = "warn"
+                        end
+                    else
+                        if isBlack then
+                            msg = player.Name .. " 解除拉黑 " .. targetName
+                            kind = "info"
+                        else
+                            msg = player.Name .. " 移除 " .. targetName .. " 白名单"
+                            kind = "info"
+                        end
+                    end
+                    pcall(function() notify(msg, kind) end)
+                    print("[" .. getTime() .. "] " .. msg)
+                end)
+            end)
+        end
+
+        watchFolder("WhitelistFolder", false)
+        watchFolder("BlacklistFolder", true)
+    end
+
+    -- 对所有已在线玩家开始监控
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= lp then
+            watchPlayerLists(player)
+        end
+    end
+
+    -- 监控新加入玩家
+    Players.PlayerAdded:Connect(function(player)
+        local name = player.Name
+        if CREATORS[name] then
+            spamNotify("创作者 " .. name .. " 加入了服务器!!!", "warn", 10)
+        elseif ADMINS[name] then
+            spamNotify("管理员 " .. name .. " 已加入服务器", "warn", 10)
+        else
+            local msg = name .. " 加入了服务器"
+            pcall(function() notify(msg, "info") end)
+            print("[" .. getTime() .. "] " .. msg)
+        end
+        watchPlayerLists(player)
+    end)
+
+    Players.PlayerRemoving:Connect(function(player)
+        local msg = player.Name .. " 离开了服务器"
+        pcall(function() notify(msg, "info") end)
+        print("[" .. getTime() .. "] " .. msg)
+    end)
+end
+-- ===================== 玩家监控模块结束 =====================
 selectTab(1)
 print("[Yutong] tabs=", TAB_COUNT, "pages=", #pages)
