@@ -9244,7 +9244,47 @@ do
                     if lastMoney ~= nil and newMoney ~= lastMoney then
                         local diff = newMoney - lastMoney
                         local sign = diff > 0 and "+" or ""
-                        local msg = "钱变动: " .. sign .. tostring(diff) .. " → " .. tostring(newMoney)
+
+                        local function addCommas(n)
+                            local s = tostring(math.floor(math.abs(n)))
+                            local result = ""
+                            local len = #s
+                            for i = 1, len do
+                                if i > 1 and (len - i + 1) % 3 == 0 then
+                                    result = result .. ","
+                                end
+                                result = result .. s:sub(i, i)
+                            end
+                            if n < 0 then result = "-" .. result end
+                            return result
+                        end
+
+                        local function formatUnit(n)
+                            local abs = math.abs(n)
+                            local unit, val
+                            if abs >= 1e15 then
+                                unit = "Qd"; val = n / 1e15
+                            elseif abs >= 1e12 then
+                                unit = "T"; val = n / 1e12
+                            elseif abs >= 1e9 then
+                                unit = "B"; val = n / 1e9
+                            elseif abs >= 1e6 then
+                                unit = "M"; val = n / 1e6
+                            else
+                                return addCommas(n), nil
+                            end
+                            local s = string.format("%.2f", val)
+                            s = s:gsub("%.?0+$", "")
+                            return addCommas(n), unit .. " (" .. s .. unit .. ")"
+                        end
+
+                        local diffComma, diffUnit = formatUnit(diff)
+                        local newComma, newUnit = formatUnit(newMoney)
+
+                        local diffStr = sign .. diffComma .. (diffUnit and " " .. diffUnit or "")
+                        local newStr = newComma .. (newUnit and " " .. newUnit or "")
+
+                        local msg = "钱变动: " .. diffStr .. " → " .. newStr
                         local kind = diff > 0 and "success" or "warn"
                         pcall(function() notify(msg, kind) end)
                         print("[" .. getTime() .. "] " .. msg)
