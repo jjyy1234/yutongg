@@ -2686,7 +2686,7 @@ carTeleportBtn.MouseButton1Click:Connect(function()
             _r:FireServer("Begin", car, 5)
             _r:FireServer("Refresh", car, 5)
             _r:FireServer("End", car, 5)
-            task.wait(0.05)
+            task.wait(0.005)
         end
     end)
     carDropdownList.Visible = false
@@ -3195,7 +3195,7 @@ teleportOneItem = function(item, targetPos)
 		pcall(function() dragRemote:FireServer("Refresh", item, 5) end)
 		pcall(function() dragRemote:FireServer("End", item, 5) end)
 		zeroVel()
-		task.wait(0.05)
+		task.wait(0.005)
 	end
 
 	-- 最终再钉一次，防止弹飞
@@ -4328,7 +4328,7 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
 							pcall(function() dragRemote:FireServer("End", target, 5) end)
 						end
-						task.wait(0.06)
+						task.wait(0.005)
 					end
 					-- 再钉几次
 					for _ = 1, 8 do
@@ -4343,7 +4343,7 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
 							pcall(function() dragRemote:FireServer("End", target, 5) end)
 						end
-						task.wait(0.05)
+						task.wait(0.005)
 					end
 					brought = true
 					duck = target
