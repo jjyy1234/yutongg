@@ -2466,11 +2466,24 @@ local teleportLocations = {
 
 local selectedTeleportIndex = 1
 
+-- 人物传送 小字标签
+local playerTpLabel = Instance.new("TextLabel")
+playerTpLabel.Name = "PlayerTpLabel"
+playerTpLabel.Parent = teleportPage
+playerTpLabel.BackgroundTransparency = 1
+playerTpLabel.Position = UDim2.new(0, px(4), 0, px(2))
+playerTpLabel.Size = UDim2.new(1, -px(8), 0, px(12))
+playerTpLabel.Text = "人物传送"
+playerTpLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
+playerTpLabel.Font = Enum.Font.GothamMedium
+playerTpLabel.TextSize = px(8)
+playerTpLabel.TextXAlignment = Enum.TextXAlignment.Left
+
 local dropdownButton = Instance.new("TextButton")
 dropdownButton.Name = "TeleportDropdown"
 dropdownButton.Parent = teleportPage
 dropdownButton.Size = UDim2.new(1, -px(8), 0, px(18))
-dropdownButton.Position = UDim2.new(0, px(4), 0, px(4))
+dropdownButton.Position = UDim2.new(0, px(4), 0, px(16))
 dropdownButton.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 dropdownButton.BorderSizePixel = 0
 dropdownButton.Text = teleportLocations[selectedTeleportIndex].name
@@ -2484,7 +2497,7 @@ local dropdownList = Instance.new("ScrollingFrame")
 dropdownList.Name = "DropdownList"
 dropdownList.Parent = teleportPage
 dropdownList.Size = UDim2.new(1, -px(8), 0, px(60))
-dropdownList.Position = UDim2.new(0, px(4), 0, px(24))
+dropdownList.Position = UDim2.new(0, px(4), 0, px(36))
 dropdownList.BackgroundColor3 = Color3.fromRGB(235, 225, 233)
 dropdownList.BorderSizePixel = 0
 dropdownList.ScrollBarThickness = 3
@@ -2531,7 +2544,7 @@ local teleportBtn = Instance.new("TextButton")
 teleportBtn.Name = "TeleportButton"
 teleportBtn.Parent = teleportPage
 teleportBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-teleportBtn.Position = UDim2.new(0, px(4), 0, px(28))
+teleportBtn.Position = UDim2.new(0, px(4), 0, px(40))
 teleportBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
 teleportBtn.BorderSizePixel = 0
 teleportBtn.Text = "传送选中地点"
@@ -2558,11 +2571,159 @@ teleportBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- ===== 汽车传送区块 =====
+-- 汽车传送 小字标签
+local carTpLabel = Instance.new("TextLabel")
+carTpLabel.Name = "CarTpLabel"
+carTpLabel.Parent = teleportPage
+carTpLabel.BackgroundTransparency = 1
+carTpLabel.Position = UDim2.new(0, px(4), 0, px(62))
+carTpLabel.Size = UDim2.new(1, -px(8), 0, px(12))
+carTpLabel.Text = "汽车传送"
+carTpLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
+carTpLabel.Font = Enum.Font.GothamMedium
+carTpLabel.TextSize = px(8)
+carTpLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local selectedCarTpIndex = 1
+
+local carDropdownButton = Instance.new("TextButton")
+carDropdownButton.Name = "CarTeleportDropdown"
+carDropdownButton.Parent = teleportPage
+carDropdownButton.Size = UDim2.new(1, -px(8), 0, px(18))
+carDropdownButton.Position = UDim2.new(0, px(4), 0, px(76))
+carDropdownButton.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+carDropdownButton.BorderSizePixel = 0
+carDropdownButton.Text = teleportLocations[selectedCarTpIndex].name
+carDropdownButton.TextColor3 = Color3.fromRGB(112, 91, 145)
+carDropdownButton.Font = Enum.Font.GothamBold
+carDropdownButton.TextSize = px(9)
+carDropdownButton.AutoButtonColor = false
+Instance.new("UICorner", carDropdownButton).CornerRadius = UDim.new(0, px(4))
+
+local carDropdownList = Instance.new("ScrollingFrame")
+carDropdownList.Name = "CarDropdownList"
+carDropdownList.Parent = teleportPage
+carDropdownList.Size = UDim2.new(1, -px(8), 0, px(60))
+carDropdownList.Position = UDim2.new(0, px(4), 0, px(96))
+carDropdownList.BackgroundColor3 = Color3.fromRGB(235, 225, 233)
+carDropdownList.BorderSizePixel = 0
+carDropdownList.ScrollBarThickness = 3
+carDropdownList.ScrollBarImageColor3 = Color3.fromRGB(180, 160, 170)
+carDropdownList.CanvasSize = UDim2.new(0, 0, 0, #teleportLocations * 20)
+carDropdownList.Visible = false
+carDropdownList.ZIndex = 20
+Instance.new("UICorner", carDropdownList).CornerRadius = UDim.new(0, px(4))
+
+local carListLayout = Instance.new("UIListLayout")
+carListLayout.Parent = carDropdownList
+carListLayout.Padding = UDim.new(0, 1)
+carListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+for i, loc in ipairs(teleportLocations) do
+	local carItemBtn = Instance.new("TextButton")
+	carItemBtn.Name = "CarItem_" .. i
+	carItemBtn.Parent = carDropdownList
+	carItemBtn.Size = UDim2.new(1, 0, 0, 16)
+	carItemBtn.BackgroundTransparency = 1
+	carItemBtn.Text = loc.name
+	carItemBtn.TextColor3 = Color3.fromRGB(90, 70, 85)
+	carItemBtn.Font = Enum.Font.GothamMedium
+	carItemBtn.TextSize = px(8)
+	carItemBtn.TextXAlignment = Enum.TextXAlignment.Left
+	carItemBtn.AutoButtonColor = false
+	carItemBtn.ZIndex = 21
+
+	carItemBtn.MouseButton1Click:Connect(function()
+		selectedCarTpIndex = i
+		carDropdownButton.Text = loc.name
+		carDropdownList.Visible = false
+	end)
+end
+
+carDropdownButton.MouseButton1Click:Connect(function()
+	carDropdownList.Visible = not carDropdownList.Visible
+	if carDropdownList.Visible then
+		carDropdownList.CanvasSize = UDim2.new(0, 0, 0, #teleportLocations * 20)
+	end
+end)
+
+local carTeleportBtn = Instance.new("TextButton")
+carTeleportBtn.Name = "CarTeleportButton"
+carTeleportBtn.Parent = teleportPage
+carTeleportBtn.Size = UDim2.new(1, -px(8), 0, px(18))
+carTeleportBtn.Position = UDim2.new(0, px(4), 0, px(100))
+carTeleportBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
+carTeleportBtn.BorderSizePixel = 0
+carTeleportBtn.Text = "汽车传送选中地点"
+carTeleportBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
+carTeleportBtn.Font = Enum.Font.GothamBold
+carTeleportBtn.TextSize = px(9)
+carTeleportBtn.AutoButtonColor = false
+Instance.new("UICorner", carTeleportBtn).CornerRadius = UDim.new(0, px(4))
+
+carTeleportBtn.MouseButton1Click:Connect(function()
+	-- 找自己的车（与 magma_trap 相同逻辑）
+	local car, driverSeat, passSeat = nil, nil, nil
+	for _, obj in ipairs(workspace.PlayerModels:GetChildren()) do
+		local owner = obj:FindFirstChild("Owner")
+		if owner and owner.Value == speaker then
+			local driver = obj:FindFirstChild("DriverSeat", true)
+			local pass = obj:FindFirstChild("Seat", true)
+			if driver or pass then
+				car, driverSeat, passSeat = obj, driver, pass
+				break
+			end
+		end
+	end
+	if not car then
+		pcall(function() notify("找不到你的车！", "warn") end)
+		return
+	end
+
+	local loc = teleportLocations[selectedCarTpIndex]
+	local targetPos = loc.pos
+	if loc.isHome then
+		targetPos = findMyPropertyPosition()
+	end
+	if not targetPos then
+		pcall(function() notify("无效地点", "warn") end)
+		return
+	end
+
+	local targetCF = CFrame.new(targetPos)
+	local dragRemote = ReplicatedStorage:FindFirstChild("Interaction")
+		and ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
+	if not dragRemote then
+		pcall(function() notify("无 ClientIsDragging", "error") end)
+		return
+	end
+
+	-- 与 magma_trap 相同的发包格式：Begin → Refresh → End + PivotTo
+	pcall(function()
+		dragRemote:FireServer("Begin", car, 5)
+		dragRemote:FireServer("Refresh", car, 5)
+		dragRemote:FireServer("End", car, 5)
+		car:PivotTo(targetCF)
+	end)
+	task.wait(0.05)
+	-- 再钉一次确保到位
+	pcall(function()
+		dragRemote:FireServer("Begin", car, 5)
+		dragRemote:FireServer("Refresh", car, 5)
+		dragRemote:FireServer("End", car, 5)
+		car:PivotTo(targetCF)
+	end)
+	carDropdownList.Visible = false
+	pcall(function() notify("汽车已传送到 " .. loc.name, "success") end)
+end)
+
+-- ===== 物品传送区块（原有） =====
 local itemTeleportLabel = Instance.new("TextLabel")
 itemTeleportLabel.Name = "ItemTeleportLabel"
 itemTeleportLabel.Parent = teleportPage
 itemTeleportLabel.BackgroundTransparency = 1
-itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(50))
+itemTeleportLabel.Position = UDim2.new(0, px(4), 0, px(122))
 itemTeleportLabel.Size = UDim2.new(1, -px(8), 0, px(12))
 itemTeleportLabel.Text = "物品传送 (Owner: 自己)"
 itemTeleportLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2574,7 +2735,7 @@ local setPointBtn = Instance.new("TextButton")
 setPointBtn.Name = "SetPoint"
 setPointBtn.Parent = teleportPage
 setPointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-setPointBtn.Position = UDim2.new(0, px(4), 0, px(64))
+setPointBtn.Position = UDim2.new(0, px(4), 0, px(136))
 setPointBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 setPointBtn.BorderSizePixel = 0
 setPointBtn.Text = "设置传送点"
@@ -2613,7 +2774,7 @@ local deletePointBtn = Instance.new("TextButton")
 deletePointBtn.Name = "DeletePoint"
 deletePointBtn.Parent = teleportPage
 deletePointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-deletePointBtn.Position = UDim2.new(0, px(4), 0, px(84))
+deletePointBtn.Position = UDim2.new(0, px(4), 0, px(156))
 deletePointBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 deletePointBtn.BorderSizePixel = 0
 deletePointBtn.Text = "删除传送点"
@@ -2632,7 +2793,7 @@ deletePointBtn.MouseButton1Click:Connect(function()
 	pcall(function() notify("已清除传送点", "info") end)
 end)
 
-local selectModeToggle = createToggle(teleportPage, px(4), px(104), false, function(on)
+local selectModeToggle = createToggle(teleportPage, px(4), px(176), false, function(on)
 	selectMode = on
 	pcall(function()
 		notify(on and "选择模式：开 · 点击物品选中" or "选择模式：关", on and "success" or "info")
@@ -2643,7 +2804,7 @@ local selectModeLabel = Instance.new("TextLabel")
 selectModeLabel.Name = "SelectModeLabel"
 selectModeLabel.Parent = teleportPage
 selectModeLabel.BackgroundTransparency = 1
-selectModeLabel.Position = UDim2.new(0, px(30), 0, px(104))
+selectModeLabel.Position = UDim2.new(0, px(30), 0, px(176))
 selectModeLabel.Size = UDim2.new(0, px(80), 0, px(12))
 selectModeLabel.Text = "选择物品 (点击)"
 selectModeLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2655,7 +2816,7 @@ local selectSameBtn = Instance.new("TextButton")
 selectSameBtn.Name = "SelectSame"
 selectSameBtn.Parent = teleportPage
 selectSameBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBtn.Position = UDim2.new(0, px(4), 0, px(124))
+selectSameBtn.Position = UDim2.new(0, px(4), 0, px(196))
 selectSameBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBtn.BorderSizePixel = 0
 selectSameBtn.Text = "选择同名物品"
@@ -2702,7 +2863,7 @@ local clearSelectedBtn = Instance.new("TextButton")
 clearSelectedBtn.Name = "ClearSelected"
 clearSelectedBtn.Parent = teleportPage
 clearSelectedBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(144))
+clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(216))
 clearSelectedBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearSelectedBtn.BorderSizePixel = 0
 clearSelectedBtn.Text = "删除所有选中"
@@ -2724,7 +2885,7 @@ local startTeleportItemsBtn = Instance.new("TextButton")
 startTeleportItemsBtn.Name = "StartTeleportItems"
 startTeleportItemsBtn.Parent = teleportPage
 startTeleportItemsBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(164))
+startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(236))
 startTeleportItemsBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 startTeleportItemsBtn.BorderSizePixel = 0
 startTeleportItemsBtn.Text = "开始传送物品"
