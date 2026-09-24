@@ -408,6 +408,8 @@ local function listenDialogTraffic(onId)
 end
 
 local function probeAllStoreNpcIds()
+	-- 已禁用：改用 PromptChat 被动缓存
+	return
 	local stores = Workspace:FindFirstChild("Stores")
 	if not stores then
 		print("[Yutong] 探测: 无 Stores")
@@ -3787,17 +3789,10 @@ task.spawn(function()
 		local function shopLabel(s)
 			local ok, text = pcall(function()
 				local id = npcIdCache[s.name]
-				if not id and npcCtxCache[s.name] then
-					id = npcCtxCache[s.name].ID
-				end
-				if not id then
-					local bases = {24}
-					pcall(function() bases = getStoreBaseIds(s.name) end)
-					id = (bases[1] or 24)
-				end
 				local nprod = s.products and #s.products or 0
 				local disp = storeDisplayName(s.name)
-				return string.format("%s ID:%s (%d)", disp, tostring(id), nprod)
+				local idStr = id and tostring(id) or "??"
+				return string.format("%s ID:%s (%d)", disp, idStr, nprod)
 			end)
 			if ok then return text end
 			return storeDisplayName(tostring(s and s.name or "?")) .. " (?)"
