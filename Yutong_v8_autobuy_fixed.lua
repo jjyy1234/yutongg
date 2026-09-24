@@ -3429,7 +3429,7 @@ local STORE_COUNTER = {
     ["CarStore"]        = Vector3.new(482.6, 9.6, -1474.9),
     ["AutumnCatalog"]   = Vector3.new(5970.4, 9.9, 26.4),
     ["Igloo"]           = Vector3.new(2311.5, 261.2, 2982.3),
-    ["PlantomicsChoice"]= Vector3.new(187.1, 18.3, -2664.6),
+    ["PlantomicsChoice"]= Vector3.new(189.558685, 12.6933651, -2662.63208),
     ["MusicStore"]      = Vector3.new(-412.3, 200.6, 1052.1),
     ["WoodRUs"]         = Vector3.new(268.0, 8.2, 67.4),
 }
