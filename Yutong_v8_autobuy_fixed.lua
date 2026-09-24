@@ -4689,12 +4689,13 @@ local placePos = {
 
 			print("[Yutong] 恶魔鸭购买", matName, storeName, counter)
 			teleportOneItem(prod, counter)
-			task.wait(0.08)
+			task.wait(0.15)
 			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then
-				hrp.CFrame = CFrame.new(counter, counter)
+				hrp.CFrame = CFrame.new(counter + Vector3.new(3, 2.2, 0), counter)
+				pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 			end
-			task.wait(0.05)
+			task.wait(0.15)
 
 			local moneyBefore = getMoney()
 			local bought, hitId = false, nil
