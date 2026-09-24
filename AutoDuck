@@ -7,7 +7,7 @@ if queueteleport then
     game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
         if KeepInfYield and not TeleportCheck then
             TeleportCheck = true
-            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/refs/heads/main/AutoDuck'))()")--替换成自己的库
+            queueteleport("loadstring(game:HttpGet('https://raw.githubusercontent.com/jjyy1234/yutongg/refs/heads/main/AutoDuck',true))()")--替换成自己的库
         end
     end)
 end
@@ -176,22 +176,20 @@ function handleDuck(duckModel)
     hrp.CFrame = homeCF + Vector3.new(0, 5, 0)
     hrp.Velocity = Vector3.new()
     hrp.RotVelocity = Vector3.new()
-    local endTime = tick() + 5
-    for t = 1, 5 do
-        task.spawn(function()
-            while tick() < endTime do
-                if not duckModel or not duckModel.Parent then break end
-                ClientIsDragging:FireServer(duckModel, PAYLOAD)
-                mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
-                duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
-                ClientIsDragging:FireServer(duckModel, PAYLOAD)
-                mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
-                duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
-                ClientIsDragging:FireServer(duckModel, PAYLOAD)
-            end
-        end)
+    local dragEnd = tick() + 5
+    local dragConn = RunService.Heartbeat:Connect(function()
+        if not duckModel or not duckModel.Parent then return end
+        ClientIsDragging:FireServer(duckModel, PAYLOAD)
+        ClientIsDragging:FireServer(duckModel, PAYLOAD)
+        ClientIsDragging:FireServer(duckModel, PAYLOAD)
+        mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
+        duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
+    end)
+    table.insert(activeDragConnections, dragConn)
+    while tick() < dragEnd do
+        if not duckModel or not duckModel.Parent then break end
+        RunService.Heartbeat:Wait()
     end
-    task.wait(5)
     clearDragConnections()
     if duckModel and duckModel.Parent then
         mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
