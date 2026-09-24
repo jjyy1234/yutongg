@@ -4153,8 +4153,13 @@ task.spawn(function()
 
 						hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 						if hrp then
-							local stand = counter + Vector3.new(3, 2.2, 0)
-							hrp.CFrame = CFrame.new(stand, counter)
+							local npcPos = counter
+							local ctx2, thom2 = getThomContext(s.name or "WoodRUs")
+							if thom2 then
+								local ok2, pp = pcall(function() return thom2:GetPivot().Position end)
+								if ok2 and pp then npcPos = pp end
+							end
+							hrp.CFrame = CFrame.new(npcPos + Vector3.new(0, 4, 0))
 							pcall(function()
 								hrp.AssemblyLinearVelocity = Vector3.zero
 								hrp.AssemblyAngularVelocity = Vector3.zero
@@ -4328,7 +4333,13 @@ task.spawn(function()
 							teleportOneItem(model, counter)
 							hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 							if hrp then
-								hrp.CFrame = CFrame.new(counter + Vector3.new(3, 2.2, 0), counter)
+								local npcPos2 = counter
+								local ctx2b, thom2b = getThomContext(storeName)
+								if thom2b then
+									local ok2b, pp2b = pcall(function() return thom2b:GetPivot().Position end)
+									if ok2b and pp2b then npcPos2 = pp2b end
+								end
+								hrp.CFrame = CFrame.new(npcPos2 + Vector3.new(0, 4, 0))
 								pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 							end
 							-- WoodRUs 不等 0.5
@@ -4689,12 +4700,19 @@ local placePos = {
 
 			print("[Yutong] 恶魔鸭购买", matName, storeName, counter)
 			teleportOneItem(prod, counter)
-			task.wait(0.08)
+			task.wait(0.15)
 			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then
-				hrp.CFrame = CFrame.new(counter, counter)
+				local npcPos5 = counter
+				local ctx5, thom5 = getThomContext(storeName)
+				if thom5 then
+					local ok5, pp5 = pcall(function() return thom5:GetPivot().Position end)
+					if ok5 and pp5 then npcPos5 = pp5 end
+				end
+				hrp.CFrame = CFrame.new(npcPos5 + Vector3.new(0, 4, 0))
+				pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 			end
-			task.wait(0.05)
+			task.wait(0.15)
 
 			local moneyBefore = getMoney()
 			local bought, hitId = false, nil
@@ -5295,7 +5313,13 @@ do
 						giftDuckBtn.Text = "等NPC缓存..."
 						hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 						if hrp and counter then
-							hrp.CFrame = CFrame.new(counter + Vector3.new(3, 2.2, 0), counter)
+							local npcPos3 = counter
+							local ctx3, thom3 = getThomContext(CRATE_STORE)
+							if thom3 then
+								local ok3, pp3 = pcall(function() return thom3:GetPivot().Position end)
+								if ok3 and pp3 then npcPos3 = pp3 end
+							end
+							hrp.CFrame = CFrame.new(npcPos3 + Vector3.new(0, 4, 0))
 						end
 						local tc = tick()
 						while tick() - tc < 3 and not giftStop do
@@ -5318,7 +5342,13 @@ do
 					teleportOneItem(crate, counter)
 					hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 					if hrp and counter then
-						hrp.CFrame = CFrame.new(counter + Vector3.new(3, 2.2, 0), counter)
+						local npcPos4 = counter
+						local ctx4, thom4 = getThomContext(CRATE_STORE)
+						if thom4 then
+							local ok4, pp4 = pcall(function() return thom4:GetPivot().Position end)
+							if ok4 and pp4 then npcPos4 = pp4 end
+						end
+						hrp.CFrame = CFrame.new(npcPos4 + Vector3.new(0, 4, 0))
 						pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 					end
 
