@@ -3301,6 +3301,7 @@ local selectedShopIndex
 local selectedProductIndex
 local buyQuantity
 local scanAllShops
+local getThomContext
 do
 -- ===================== 购买页：下拉选项 + 自动购买 =====================
 local WOODRUS_COUNTER = Vector3.new(268.0, 8.2, 67.4)
@@ -3792,7 +3793,7 @@ task.spawn(function()
 			return nil
 		end
 
-		local function getThomContext(storeName)
+		getThomContext = function(storeName)
 			storeName = storeName or "WoodRUs"
 			if npcCtxCache[storeName] and npcCtxCache[storeName].Character then
 				local c = npcCtxCache[storeName]
@@ -4863,6 +4864,7 @@ autoLunarDuckBtn.MouseButton1Click:Connect(function()
 		local character = speaker.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
 		local originalPos = hrp and hrp.Position
+		local savedCF = hrp and hrp.CFrame
 
 		local function placeMaterials()
 			teleportOneItem(duckAngel, Vector3.new(-7041.930, 388.425, 4906.211))
@@ -4902,6 +4904,10 @@ autoLunarDuckBtn.MouseButton1Click:Connect(function()
 			notify("星空鸭合成成功！", "success")
 		else
 			notify("星空鸭合成失败，材料已放置", "warn")
+		end
+		-- 返回原地
+		if savedCF and speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart") then
+			speaker.Character.HumanoidRootPart.CFrame = savedCF
 		end
 
 		autoLunarDuckBtn.Text = "自动合成星空鸭"
@@ -5315,6 +5321,7 @@ autoVengeanceBtn.MouseButton1Click:Connect(function()
 			return
 		end
 
+		local savedCF = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart") and speaker.Character.HumanoidRootPart.CFrame
 		teleportOneItem(duckEvil, Vector3.new(6486.7, -97.4, -4550.9))
 		task.wait(0.25)
 		teleportOneItem(duckAngel, Vector3.new(6447.6, -99.4, -4523.6))
@@ -5324,6 +5331,10 @@ autoVengeanceBtn.MouseButton1Click:Connect(function()
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
 		if hrp then
 			hrp.CFrame = CFrame.new(6464.1, -95.6, -4539.5)
+		end
+		-- 返回原地
+		if savedCF and speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart") then
+			speaker.Character.HumanoidRootPart.CFrame = savedCF
 		end
 
 		autoVengeanceBtn.Text = "自动合成复仇剑"
