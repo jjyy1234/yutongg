@@ -4803,24 +4803,21 @@ local placePos = {
 			return findNewDuckEvil()
 		end
 
-		-- 开盒后先监测 1.2 秒
-		btn.Text = "监测1.2s..."
-		pcall(function() notify("监测无主DuckEvil 1.2秒", "info") end)
-		local newDuck = waitNewDuck(1.2)
-
-		-- 没有则重新放置材料（不开盒），再监测 1 秒
-		if not newDuck then
-			btn.Text = "重放材料..."
-			pcall(function() notify("未出鸭，重新执行放置(步骤5，不开盒)", "warn") end)
+		-- 开盒后监测，没出鸭就无限重放直到出现
+		local newDuck = nil
+		local retryCount = 0
+		newDuck = waitNewDuck(1.0)
+		while not newDuck do
+			retryCount = retryCount + 1
+			btn.Text = string.format("重放材料 #%d", retryCount)
+			pcall(function() notify(string.format("未出鸭，第%d次重放", retryCount), "warn") end)
 			for i = 1, 3 do
 				if owned[i] and owned[i].Parent then
 					teleportOneItem(owned[i], placePos[i])
-					task.wait(0.12)
+					task.wait(0.05)
 				end
 			end
-			btn.Text = "再监测1.2s..."
-			pcall(function() notify("重放后监测 1.2 秒", "info") end)
-			newDuck = waitNewDuck(1.2)
+			newDuck = waitNewDuck(0.8)
 		end
 
 		if newDuck then
