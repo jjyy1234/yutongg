@@ -2869,6 +2869,171 @@ startTeleportItemsBtn.TextSize = px(10)
 startTeleportItemsBtn.AutoButtonColor = false
 Instance.new("UICorner", startTeleportItemsBtn).CornerRadius = UDim.new(0, px(4))
 
+-- ===== 一键开箱 =====
+local boxLabel = Instance.new("TextLabel")
+boxLabel.Name = "BoxLabel"
+boxLabel.Parent = teleportPage
+boxLabel.BackgroundTransparency = 1
+boxLabel.Position = UDim2.new(0, px(4), 0, px(270))
+boxLabel.Size = UDim2.new(1, -px(8), 0, px(12))
+boxLabel.Text = "一键开箱"
+boxLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
+boxLabel.Font = Enum.Font.GothamBold
+boxLabel.TextSize = px(9)
+boxLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local selectedBoxItem = nil
+local selectedBoxItems = {}
+
+local selectBoxBtn = Instance.new("TextButton")
+selectBoxBtn.Name = "SelectBoxBtn"
+selectBoxBtn.Parent = teleportPage
+selectBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
+selectBoxBtn.Position = UDim2.new(0, px(4), 0, px(284))
+selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+selectBoxBtn.BorderSizePixel = 0
+selectBoxBtn.Text = "点击选择箱子"
+selectBoxBtn.TextColor3 = Color3.fromRGB(112, 91, 145)
+selectBoxBtn.Font = Enum.Font.GothamBold
+selectBoxBtn.TextSize = px(9)
+selectBoxBtn.AutoButtonColor = false
+Instance.new("UICorner", selectBoxBtn).CornerRadius = UDim.new(0, px(4))
+
+local boxSelectMode = false
+local boxSelectConn = nil
+
+selectBoxBtn.MouseButton1Click:Connect(function()
+	boxSelectMode = not boxSelectMode
+	if boxSelectMode then
+		selectBoxBtn.Text = "选择中...（点击物品）"
+		selectBoxBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
+		if boxSelectConn then boxSelectConn:Disconnect() end
+		boxSelectConn = Mouse.Button1Down:Connect(function()
+			local target = Mouse.Target
+			if not target then return end
+			local model = target:IsA("Model") and target or target:FindFirstAncestorWhichIsA("Model")
+			if not model then model = target end
+			-- 加入列表
+			local already = false
+			for _, v in ipairs(selectedBoxItems) do
+				if v == model then already = true break end
+			end
+			if not already then
+				table.insert(selectedBoxItems, model)
+				selectBoxBtn.Text = "已选 " .. #selectedBoxItems .. " 个"
+				selectBoxBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
+				notify("已选: " .. model.Name, "info")
+			end
+		end)
+	else
+		boxSelectMode = false
+		if boxSelectConn then boxSelectConn:Disconnect(); boxSelectConn = nil end
+		selectBoxBtn.Text = "点击选择箱子（已选 " .. #selectedBoxItems .. "）"
+		selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+	end
+end)
+
+local selectSameBoxBtn = Instance.new("TextButton")
+selectSameBoxBtn.Name = "SelectSameBoxBtn"
+selectSameBoxBtn.Parent = teleportPage
+selectSameBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
+selectSameBoxBtn.Position = UDim2.new(0, px(4), 0, px(306))
+selectSameBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+selectSameBoxBtn.BorderSizePixel = 0
+selectSameBoxBtn.Text = "选择同名箱子"
+selectSameBoxBtn.TextColor3 = Color3.fromRGB(112, 91, 145)
+selectSameBoxBtn.Font = Enum.Font.GothamBold
+selectSameBoxBtn.TextSize = px(9)
+selectSameBoxBtn.AutoButtonColor = false
+Instance.new("UICorner", selectSameBoxBtn).CornerRadius = UDim.new(0, px(4))
+
+selectSameBoxBtn.MouseButton1Click:Connect(function()
+	if #selectedBoxItems == 0 then
+		notify("请先选择一个箱子", "warn")
+		return
+	end
+	local firstName = selectedBoxItems[1].Name
+	local count = 0
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj:IsA("Model") and obj.Name == firstName then
+			local already = false
+			for _, v in ipairs(selectedBoxItems) do
+				if v == obj then already = true break end
+			end
+			if not already then
+				table.insert(selectedBoxItems, obj)
+				count = count + 1
+			end
+		end
+	end
+	selectBoxBtn.Text = "已选 " .. #selectedBoxItems .. " 个"
+	notify("同名箱子 +" .. count .. "，共 " .. #selectedBoxItems .. " 个", "info")
+end)
+
+local clearBoxBtn = Instance.new("TextButton")
+clearBoxBtn.Name = "ClearBoxBtn"
+clearBoxBtn.Parent = teleportPage
+clearBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
+clearBoxBtn.Position = UDim2.new(0, px(4), 0, px(328))
+clearBoxBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
+clearBoxBtn.BorderSizePixel = 0
+clearBoxBtn.Text = "删除选中"
+clearBoxBtn.TextColor3 = Color3.fromRGB(146, 83, 101)
+clearBoxBtn.Font = Enum.Font.GothamBold
+clearBoxBtn.TextSize = px(9)
+clearBoxBtn.AutoButtonColor = false
+Instance.new("UICorner", clearBoxBtn).CornerRadius = UDim.new(0, px(4))
+
+clearBoxBtn.MouseButton1Click:Connect(function()
+	selectedBoxItems = {}
+	selectBoxBtn.Text = "点击选择箱子"
+	selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+	notify("已清空选中箱子", "info")
+end)
+
+local openAllBoxBtn = Instance.new("TextButton")
+openAllBoxBtn.Name = "OpenAllBoxBtn"
+openAllBoxBtn.Parent = teleportPage
+openAllBoxBtn.Size = UDim2.new(1, -px(8), 0, px(20))
+openAllBoxBtn.Position = UDim2.new(0, px(4), 0, px(350))
+openAllBoxBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
+openAllBoxBtn.BorderSizePixel = 0
+openAllBoxBtn.Text = "一键开箱"
+openAllBoxBtn.TextColor3 = Color3.fromRGB(74, 125, 94)
+openAllBoxBtn.Font = Enum.Font.GothamBold
+openAllBoxBtn.TextSize = px(9)
+openAllBoxBtn.AutoButtonColor = false
+Instance.new("UICorner", openAllBoxBtn).CornerRadius = UDim.new(0, px(4))
+
+openAllBoxBtn.MouseButton1Click:Connect(function()
+	if #selectedBoxItems == 0 then
+		notify("请先选择箱子", "warn")
+		return
+	end
+	local inter = ReplicatedStorage:FindFirstChild("Interaction")
+	local clientInteracted = inter and inter:FindFirstChild("ClientInteracted")
+	if not clientInteracted then
+		notify("无 ClientInteracted Remote", "error")
+		return
+	end
+	local total = #selectedBoxItems
+	notify("开箱中 x" .. total, "info")
+	for i, model in ipairs(selectedBoxItems) do
+		if model and model.Parent then
+			for _ = 1, 2 do
+				pcall(function()
+					clientInteracted:FireServer(model, "Open box")
+				end)
+				task.wait(0.12)
+			end
+		end
+	end
+	notify("开箱完成 x" .. total, "success")
+	selectedBoxItems = {}
+	selectBoxBtn.Text = "点击选择箱子"
+	selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
+end)
+
 startTeleportItemsBtn.MouseButton1Click:Connect(function()
 	print("[Yutong] 开始传送物品", "point=", teleportPoint ~= nil, "count=", #selectedItems)
 	if not teleportPoint then
@@ -4832,16 +4997,44 @@ autoLunarDuckBtn.MouseButton1Click:Connect(function()
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
 		local originalPos = hrp and hrp.Position
 
-		teleportOneItem(duckAngel, Vector3.new(-7041.930, 388.425, 4906.211))
-		task.wait(0.25)
-		teleportOneItem(duck, Vector3.new(-7066.732, 388.563, 4898.587))
-		task.wait(0.25)
-		teleportOneItem(duckEvil, Vector3.new(-7092.041, 388.535, 4890.808))
-		task.wait(0.8)
+		local function placeMaterials()
+			teleportOneItem(duckAngel, Vector3.new(-7041.930, 388.425, 4906.211))
+			task.wait(0.25)
+			teleportOneItem(duck, Vector3.new(-7066.732, 388.563, 4898.587))
+			task.wait(0.25)
+			teleportOneItem(duckEvil, Vector3.new(-7092.041, 388.535, 4890.808))
+		end
 
-		local lunar = findUnownedItem("LunarDuck")
+		placeMaterials()
+
+		-- 等最多3秒看有没有合成出来
+		autoLunarDuckBtn.Text = "等待合成..."
+		local lunar = nil
+		local t0 = tick()
+		while tick() - t0 < 3 do
+			lunar = findUnownedItem("LunarDuck")
+			if lunar then break end
+			task.wait(0.2)
+		end
+
+		-- 没出来就重新拖一次材料再等3秒
+		if not lunar then
+			autoLunarDuckBtn.Text = "重试中..."
+			placeMaterials()
+			local t1 = tick()
+			while tick() - t1 < 3 do
+				lunar = findUnownedItem("LunarDuck")
+				if lunar then break end
+				task.wait(0.2)
+			end
+		end
+
 		if lunar and originalPos then
+			autoLunarDuckBtn.Text = "拖回中..."
 			teleportOneItem(lunar, originalPos)
+			notify("星空鸭合成成功！", "success")
+		else
+			notify("星空鸭合成失败，材料已放置", "warn")
 		end
 
 		autoLunarDuckBtn.Text = "自动合成星空鸭"
