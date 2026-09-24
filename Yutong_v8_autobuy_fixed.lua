@@ -340,14 +340,6 @@ local function candidateIdsForStore(storeName)
 			add(base + serverIdOffset)
 		end
 	end
-	for _, base in ipairs(getStoreBaseIds(storeName)) do
-		-- 范围 base-2 .. base+2
-		for d = -2, 2 do
-			add(base + d)
-		end
-	end
-	add(24)
-	add(25)
 	return ids
 end
 
