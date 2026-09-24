@@ -167,47 +167,31 @@ function handleDuck(duckModel)
         return false
     end
     clearDragConnections()
-    notify("Success", "DuckAngel detected, establishing drag...")
+    notify("Success", "DuckAngel detected, dragging to base...")
     local duckPos = mainPart.Position
     hrp.CFrame = CFrame.new(duckPos + Vector3.new(0, 2, 0))
     hrp.Velocity = Vector3.new()
     hrp.RotVelocity = Vector3.new()
     task.wait(0.2)
-    local dragConn = RunService.Heartbeat:Connect(function()
-        if duckModel and duckModel.Parent then
-            ClientIsDragging:FireServer(duckModel, PAYLOAD)
-        end
-    end)
-    table.insert(activeDragConnections, dragConn)
-    for i = 1, 100 do
-        if not duckModel.Parent then break end
-        ClientIsDragging:FireServer(duckModel, PAYLOAD)
-        task.wait(0.01)
-    end
-    if not duckModel.Parent then
-        clearDragConnections()
-        notify("Error", "Duck disappeared while connecting")
-        return false
-    end
-    notify("Info", "Connection established, teleporting to base...")
-    local tpConn = RunService.Heartbeat:Connect(function()
-        if duckModel and duckModel.Parent then
-            ClientIsDragging:FireServer(duckModel, PAYLOAD)
-            mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
-            duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
-        end
-    end)
-    table.insert(activeDragConnections, tpConn)
     hrp.CFrame = homeCF + Vector3.new(0, 5, 0)
     hrp.Velocity = Vector3.new()
     hrp.RotVelocity = Vector3.new()
-    for i = 1, 120 do
-        if not duckModel.Parent then break end
-        ClientIsDragging:FireServer(duckModel, PAYLOAD)
-        mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
-        duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
-        RunService.Heartbeat:Wait()
+    local endTime = tick() + 5
+    for t = 1, 5 do
+        task.spawn(function()
+            while tick() < endTime do
+                if not duckModel or not duckModel.Parent then break end
+                ClientIsDragging:FireServer(duckModel, PAYLOAD)
+                mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
+                duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
+                ClientIsDragging:FireServer(duckModel, PAYLOAD)
+                mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
+                duckModel:PivotTo(homeCF + Vector3.new(0, 1, 0))
+                ClientIsDragging:FireServer(duckModel, PAYLOAD)
+            end
+        end)
     end
+    task.wait(5)
     clearDragConnections()
     if duckModel and duckModel.Parent then
         mainPart.CFrame = homeCF + Vector3.new(0, 1, 0)
