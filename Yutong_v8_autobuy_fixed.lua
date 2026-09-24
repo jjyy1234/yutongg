@@ -5978,8 +5978,8 @@ contDemonBtn.MouseButton1Click:Connect(function()
 				task.wait(0.35)
 			end
 			if not contDemonDuck then break end
-			-- 成功或结束一轮后等 20 秒
-			for i = 20, 1, -1 do
+			-- 成功或结束一轮后等 3 秒
+			for i = 3, 1, -1 do
 				if not contDemonDuck then break end
 				contDemonBtn.Text = string.format("持续合成 等待 %ds", i)
 				task.wait(1)
