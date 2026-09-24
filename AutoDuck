@@ -1,4 +1,4 @@
--- Create By 语彤 开源全自动永恒/恶魔鸭
+-- Create By 语彤 开源全自动恶魔鸭
 
 local queueteleport = queue_on_teleport or (syn and syn.queue_on_teleport) or (fluxus and fluxus.queue_on_teleport)
 local KeepInfYield = true
@@ -46,7 +46,6 @@ local lp = Players.LocalPlayer
 local PAYLOAD = "Ifyouarereadingthisstophackingbrolegitalsokrnlisbadbtw432rewdWdwFe432432rwDWDAVWdawgdGWAYDFGYTUW"
 local Interaction = ReplicatedStorage:WaitForChild("Interaction")
 local ClientIsDragging = Interaction:WaitForChild("ClientIsDragging")
-local ClientInteracted = Interaction:WaitForChild("ClientInteracted")
 local activeDragConnections = {}
 
 function notify(title, text, dur)
