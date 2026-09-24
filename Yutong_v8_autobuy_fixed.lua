@@ -4405,48 +4405,27 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 						end)
 					end
 					task.wait(0.15)
-					-- 超级狂拖：5并发无等待疯狂发包，持续5秒
+					-- 正常拖拽：3并发 Begin→Refresh→End 循环，持续2秒
 					local dest = CFrame.new(originalPos.X, originalPos.Y + 0.5, originalPos.Z)
-					local dragging = true
-					for t = 1, 5 do
+					local dragEnd = tick() + 2
+					for t = 1, 3 do
 						task.spawn(function()
-							while dragging do
+							while tick() < dragEnd do
 								if not target or not target.Parent then break end
 								pcall(function()
 									if target:IsA("Model") then target:PivotTo(dest)
 									elseif target:IsA("BasePart") then target.CFrame = dest end
 								end)
 								if dragRemote then
-									dragRemote:FireServer("Begin", target, 5)
-									dragRemote:FireServer("Refresh", target, 5)
-									dragRemote:FireServer("End", target, 5)
-									dragRemote:FireServer("Begin", target, 5)
-									dragRemote:FireServer("Refresh", target, 5)
-									dragRemote:FireServer("End", target, 5)
-									dragRemote:FireServer("Begin", target, 5)
-									dragRemote:FireServer("Refresh", target, 5)
-									dragRemote:FireServer("End", target, 5)
+									pcall(function() dragRemote:FireServer("Begin", target, 5) end)
+									pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
+									pcall(function() dragRemote:FireServer("End", target, 5) end)
 								end
+								task.wait()
 							end
 						end)
 					end
-					task.wait(5)
-					dragging = false
-					task.wait(0.1)
-					-- 再钉20次
-					for _ = 1, 20 do
-						if not target or not target.Parent then break end
-						pcall(function()
-							if target:IsA("Model") then
-								target:PivotTo(CFrame.new(originalPos + Vector3.new(0, 0.5, 0)))
-							end
-						end)
-						if dragRemote then
-							pcall(function() dragRemote:FireServer("Begin", target, 5) end)
-							pcall(function() dragRemote:FireServer("Refresh", target, 5) end)
-							pcall(function() dragRemote:FireServer("End", target, 5) end)
-						end
-					end
+					task.wait(2)
 					brought = true
 					duck = target
 					break
