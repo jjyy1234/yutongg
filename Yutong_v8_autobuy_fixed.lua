@@ -3455,7 +3455,7 @@ local function findCounterInStore(storeModel)
 	if not storeModel then return WOODRUS_COUNTER end
 	-- 固定柜台
 	if storeModel.Name == "PlantomicsChoice" then
-		return Vector3.new(189.44696044921875, 14.262721061706543, -2662.3935546875)
+		return Vector3.new(189.558685, 12.6933651, -2662.63208)
 	end
 	local best, bestDist = nil, 9999
 	local center = getModelPos(storeModel) or WOODRUS_COUNTER
