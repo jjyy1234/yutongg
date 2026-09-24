@@ -3325,7 +3325,7 @@ teleportOneItem = function(item, targetPos)
 
 	-- 目标：贴地/贴柜台，不要从高空砸下去
 	local tp = typeof(targetPos) == "Vector3" and targetPos or Vector3.new(targetPos.X, targetPos.Y, targetPos.Z)
-	local placeY = tp.Y + 0.4
+	local placeY = tp.Y
 	local targetCF = CFrame.new(tp.X, placeY, tp.Z)
 
 	local function zeroVel()
