@@ -4166,10 +4166,27 @@ task.spawn(function()
 							end)
 						end
 						local storeName = s.name or "WoodRUs"
-						-- 仅 PlantomicsChoice 多等，其它店立即买
+						-- 植物商店：传完之后持续压住商品防止滑落
 						if storeName == "PlantomicsChoice" then
-							status.Text = string.format("%d/%d 等待就位", q, buyQuantity)
-							task.wait(0.5)
+							status.Text = string.format("%d/%d 压住商品", q, buyQuantity)
+							local inter = game:GetService("ReplicatedStorage"):FindFirstChild("Interaction")
+							local clientDragging = inter and inter:FindFirstChild("ClientIsDragging")
+							local DRAG_KEY = "Ifyouarereadingthisstophackingbrolegitalsokrnlisbadbtw432rewdWdwFe432432rwDWDAVW"
+							if clientDragging and model and model.Parent then
+								local t0 = tick()
+								while tick() - t0 < 0.8 do
+									pcall(function()
+										clientDragging:FireServer("Begin", model, 5)
+										clientDragging:FireServer("Refresh", model, 5)
+										clientDragging:FireServer("End", model, 5)
+									end)
+									task.wait(0.05)
+									-- 每次都重新传一次坐标确保不偏移
+									teleportOneItem(model, counter)
+								end
+							else
+								task.wait(0.5)
+							end
 						end
 
 						-- 无 NPC ID 缓存：停柜台等缓存，3秒没有则回原位
