@@ -523,9 +523,8 @@ pcall(function()
             if not store then return end
             if store.Parent ~= stores then return end
             local name = store.Name
-            -- 已有缓存的不覆盖
+            -- 买过一次锁定后不覆盖，其余 PromptChat 来的直接覆盖
             if npcIdConfirmed[name] then return end
-            if npcIdCache[name] then return end
             npcIdCache[name] = data.ID
             npcCtxCache[name] = {
                 ID = data.ID,
