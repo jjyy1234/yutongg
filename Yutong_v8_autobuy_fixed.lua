@@ -4353,7 +4353,9 @@ local autoAngelDuckBtn = createOtherBtn("AutoAngelDuck", "自动获取天堂鸭"
 
 autoAngelDuckBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoAngelDuckBtn.Text = "极速获取..."
+		
+		local ok, err = pcall(function()
+			autoAngelDuckBtn.Text = "极速获取..."
 		autoAngelDuckBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local character = speaker.Character
@@ -4450,6 +4452,11 @@ autoAngelDuckBtn.MouseButton1Click:Connect(function()
 
 		autoAngelDuckBtn.Text = "自动获取天堂鸭"
 		autoAngelDuckBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 150)
+		end)
+		if not ok then
+			warn("[Yutong] autoAngelDuckBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -4457,7 +4464,9 @@ end)
 local autoDemonDuckTestBtn = createOtherBtn("AutoDemonDuckTest", "自动合成恶魔鸭", Color3.fromRGB(180, 100, 100), Color3.fromRGB(90, 30, 30))
 autoDemonDuckTestBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		local btn = autoDemonDuckTestBtn
+		
+		local ok, err = pcall(function()
+			local btn = autoDemonDuckTestBtn
 		btn.Text = "识别材料..."
 		btn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
@@ -4837,6 +4846,11 @@ local placePos = {
 		if hrp then hrp.CFrame = originalCF end
 		btn.Text = "自动合成恶魔鸭"
 		btn.BackgroundColor3 = Color3.fromRGB(180, 100, 100)
+		end)
+		if not ok then
+			warn("[Yutong] autoDemonDuckTestBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -4845,7 +4859,9 @@ local autoLunarDuckBtn = createOtherBtn("AutoLunarDuck", "自动合成星空鸭"
 
 autoLunarDuckBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoLunarDuckBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoLunarDuckBtn.Text = "进行中..."
 		autoLunarDuckBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local duckAngel = findOwnedItem("DuckAngel")
@@ -4912,6 +4928,11 @@ autoLunarDuckBtn.MouseButton1Click:Connect(function()
 
 		autoLunarDuckBtn.Text = "自动合成星空鸭"
 		autoLunarDuckBtn.BackgroundColor3 = Color3.fromRGB(180, 200, 255)
+		end)
+		if not ok then
+			warn("[Yutong] autoLunarDuckBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5306,7 +5327,9 @@ local autoVengeanceBtn = createOtherBtn("AutoVengeance", "自动合成复仇剑"
 
 autoVengeanceBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoVengeanceBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoVengeanceBtn.Text = "进行中..."
 		autoVengeanceBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local duckEvil = findOwnedItem("DuckEvil")
@@ -5339,6 +5362,11 @@ autoVengeanceBtn.MouseButton1Click:Connect(function()
 
 		autoVengeanceBtn.Text = "自动合成复仇剑"
 		autoVengeanceBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
+		end)
+		if not ok then
+			warn("[Yutong] autoVengeanceBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5346,7 +5374,9 @@ local autoTridentBtn = createOtherBtn("AutoTrident", "自动合成三叉戟", Co
 
 autoTridentBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoTridentBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoTridentBtn.Text = "进行中..."
 		autoTridentBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local duckAngel = findOwnedItem("DuckAngel")
@@ -5418,6 +5448,11 @@ autoTridentBtn.MouseButton1Click:Connect(function()
 		task.wait(0.6)
 		autoTridentBtn.Text = "自动合成三叉戟"
 		autoTridentBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
+		end)
+		if not ok then
+			warn("[Yutong] autoTridentBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5440,7 +5475,9 @@ end
 
 autoEternalBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoEternalBtn.Text = "检查材料..."
+		
+		local ok, err = pcall(function()
+			autoEternalBtn.Text = "检查材料..."
 		autoEternalBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local character = speaker.Character
@@ -5570,6 +5607,11 @@ autoEternalBtn.MouseButton1Click:Connect(function()
 
 		autoEternalBtn.Text = "自动合成永恒剑"
 		autoEternalBtn.BackgroundColor3 = Color3.fromRGB(220, 200, 255)
+		end)
+		if not ok then
+			warn("[Yutong] autoEternalBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5577,7 +5619,9 @@ local autoHellfireBtn = createOtherBtn("AutoHellfire", "自动合成地狱火", 
 
 autoHellfireBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoHellfireBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoHellfireBtn.Text = "进行中..."
 		autoHellfireBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local trident = findOwnedItemAny({
@@ -5635,6 +5679,11 @@ autoHellfireBtn.MouseButton1Click:Connect(function()
 		if hrp and originalCF then hrp.CFrame = originalCF end
 		autoHellfireBtn.Text = "自动合成地狱火"
 		autoHellfireBtn.BackgroundColor3 = Color3.fromRGB(255, 160, 120)
+		end)
+		if not ok then
+			warn("[Yutong] autoHellfireBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5642,7 +5691,9 @@ local autoHeavenSwordBtn = createOtherBtn("AutoHeavenSword", "自动合成天堂
 
 autoHeavenSwordBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoHeavenSwordBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoHeavenSwordBtn.Text = "进行中..."
 		autoHeavenSwordBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local halo = findOwnedItem("AngelHalo")
@@ -5695,6 +5746,11 @@ autoHeavenSwordBtn.MouseButton1Click:Connect(function()
 		if hrp and originalCF then hrp.CFrame = originalCF end
 		autoHeavenSwordBtn.Text = "自动合成天堂剑"
 		autoHeavenSwordBtn.BackgroundColor3 = Color3.fromRGB(255, 230, 150)
+		end)
+		if not ok then
+			warn("[Yutong] autoHeavenSwordBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5702,7 +5758,9 @@ end)
 local autoLunarisSwordBtn = createOtherBtn("AutoLunarisSword", "自动合成月神剑", Color3.fromRGB(200, 180, 255), Color3.fromRGB(80, 50, 140))
 autoLunarisSwordBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoLunarisSwordBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoLunarisSwordBtn.Text = "进行中..."
 		autoLunarisSwordBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 		local character = speaker.Character
 		local hrp = character and character:FindFirstChild("HumanoidRootPart")
@@ -5770,6 +5828,11 @@ autoLunarisSwordBtn.MouseButton1Click:Connect(function()
 		task.wait(0.5)
 		autoLunarisSwordBtn.Text = "自动合成月神剑"
 		autoLunarisSwordBtn.BackgroundColor3 = Color3.fromRGB(200, 180, 255)
+		end)
+		if not ok then
+			warn("[Yutong] autoLunarisSwordBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5777,7 +5840,9 @@ end)
 local autoEvilCoreBtn = createOtherBtn("AutoEvilCore", "自动合成Doom核心", Color3.fromRGB(120, 40, 40), Color3.fromRGB(255, 200, 200))
 autoEvilCoreBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoEvilCoreBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoEvilCoreBtn.Text = "进行中..."
 		autoEvilCoreBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 
 		local character = speaker.Character
@@ -5840,6 +5905,11 @@ autoEvilCoreBtn.MouseButton1Click:Connect(function()
 
 		autoEvilCoreBtn.Text = "自动合成Doom核心"
 		autoEvilCoreBtn.BackgroundColor3 = Color3.fromRGB(120, 40, 40)
+		end)
+		if not ok then
+			warn("[Yutong] autoEvilCoreBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -5848,7 +5918,9 @@ end)
 local autoDoomSwordBtn = createOtherBtn("AutoDoomSword", "自动合成Doom剑", Color3.fromRGB(60, 60, 60), Color3.fromRGB(220, 220, 220))
 autoDoomSwordBtn.MouseButton1Click:Connect(function()
 	task.spawn(function()
-		autoDoomSwordBtn.Text = "进行中..."
+		
+		local ok, err = pcall(function()
+			autoDoomSwordBtn.Text = "进行中..."
 		autoDoomSwordBtn.BackgroundColor3 = Color3.fromRGB(255, 224, 190)
 		local core = findOwnedItem("EvilCore")
 		if not core then
@@ -5901,6 +5973,11 @@ autoDoomSwordBtn.MouseButton1Click:Connect(function()
 		if hrp and originalCF then hrp.CFrame = originalCF end
 		autoDoomSwordBtn.Text = "自动合成Doom剑"
 		autoDoomSwordBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+		end)
+		if not ok then
+			warn("[Yutong] autoDoomSwordBtn", err)
+			pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+		end
 	end)
 end)
 
@@ -7505,7 +7582,9 @@ autoSellPlankBtn.MouseButton1Click:Connect(function()
         autoSellPlankBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
         autoSellPlankBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
         task.spawn(function()
-            while autoSellPlankOn do
+            
+            local ok, err = pcall(function()
+            	while autoSellPlankOn do
                 for _, Plank in pairs(Workspace.PlayerModels:GetChildren()) do
                     if Plank.Name == "Plank" and Plank:FindFirstChild("Owner") then
                         if Plank.Owner.Value == speaker then
@@ -7535,6 +7614,11 @@ autoSellPlankBtn.MouseButton1Click:Connect(function()
                 end
                 task.wait()
             end
+            end)
+            if not ok then
+            	warn("[Yutong] autoSellPlankBtn", err)
+            	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+            end
         end)
     else
         autoSellPlankBtn.Text = "自动卖木板: 关"
@@ -7558,9 +7642,16 @@ autoSellWoodBtn.MouseButton1Click:Connect(function()
         autoSellWoodBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
         autoSellWoodBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
         task.spawn(function()
-            while autoSellWoodOn do
+            
+            local ok, err = pcall(function()
+            	while autoSellWoodOn do
                 sellwood()
                 task.wait()
+            end
+            end)
+            if not ok then
+            	warn("[Yutong] autoSellWoodBtn", err)
+            	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
             end
         end)
     else
@@ -7574,7 +7665,9 @@ end)
 local draggerOn = false
 local draggerBtn = woodBtn("拖拽器: 关", Color3.fromRGB(230, 220, 228), Color3.fromRGB(145, 103, 134))
 draggerBtn.MouseButton1Click:Connect(function()
-    draggerOn = not draggerOn
+    
+    local ok, err = pcall(function()
+    	draggerOn = not draggerOn
     if draggerOn then
         draggerBtn.Text = "拖拽器: 开"
         draggerBtn.BackgroundColor3 = Color3.fromRGB(191, 226, 205)
@@ -7605,6 +7698,11 @@ draggerBtn.MouseButton1Click:Connect(function()
                 BodyGyro.P = 1200; BodyGyro.D = 140
             end
         end)
+    end
+    end)
+    if not ok then
+    	warn("[Yutong] draggerBtn", err)
+    	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
     end
 end)
 
@@ -8148,8 +8246,15 @@ autoFarmBtn.MouseButton1Click:Connect(function()
         autoFarmBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
         bai.autofarm = true
         task.spawn(function()
-            while task.wait(0.3) do
+            
+            local ok, err = pcall(function()
+            	while task.wait(0.3) do
                 if bai.autofarm == true then bringTree(selectedTreeClass) end
+            end
+            end)
+            if not ok then
+            	warn("[Yutong] autoFarmBtn", err)
+            	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
             end
         end)
     else
@@ -8172,7 +8277,9 @@ autoMoneyBtn.MouseButton1Click:Connect(function()
         bai.autofarm1 = true
         local oldpos = speaker.Character.HumanoidRootPart.CFrame
         task.spawn(function()
-            while task.wait() do
+            
+            local ok, err = pcall(function()
+            	while task.wait() do
                 if bai.autofarm1 == true then
                     speaker.Character:MoveTo(Vector3.new(315, -0.296, 102.791))
                     autofarm(selectedTreeClass)
@@ -8180,6 +8287,11 @@ autoMoneyBtn.MouseButton1Click:Connect(function()
                     speaker.Character:MoveTo(Vector3.new(315, -0.296, 102.791))
                     wait(20)
                 end
+            end
+            end)
+            if not ok then
+            	warn("[Yutong] autoMoneyBtn", err)
+            	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
             end
         end)
     else
@@ -8903,7 +9015,14 @@ do
     pinkStartBtn.MouseButton1Click:Connect(function()
         if pinkCarRunning then return end
         task.spawn(function()
-            pinkRunFarmLoop()
+            
+            local ok, err = pcall(function()
+            	pinkRunFarmLoop()
+            end)
+            if not ok then
+            	warn("[Yutong] pinkStartBtn", err)
+            	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+            end
         end)
     end)
 
@@ -9168,7 +9287,9 @@ do
                 magmaStatusLbl.Text = "状态: 上车！→ 岩浆"
                 pcall(function() notify(magma_targetPlayer.Name .. " 上车！", "success") end)
                 task.spawn(function()
-                    for i = 1, 20 do
+                    
+                    local ok, err = pcall(function()
+                    	for i = 1, 20 do
                         pcall(function()
                             local _r = ReplicatedStorage.Interaction.ClientIsDragging
                             _r:FireServer("Begin", car, 5)
@@ -9180,6 +9301,11 @@ do
                     end
                     magmaStatusLbl.Text = "状态: 完成！"
                     pcall(function() notify("Magma Trap 完成！", "success") end)
+                    end)
+                    if not ok then
+                    	warn("[Yutong] magmaAimBtn", err)
+                    	pcall(function() StarterGui:SetCore("SendNotification",{Title="[Yutong] 出错",Text=tostring(err):sub(1,80),Duration=4}) end)
+                    end
                 end)
             end
         end)
