@@ -3975,14 +3975,23 @@ task.spawn(function()
 			local setVal = npcDlg:FindFirstChild("SetChattingValue")
 			if not playerChatted then return false, nil end
 
-			local cachedId = npcIdCache[storeName] or (ctx and ctx.ID)
+			-- 等 PromptChat 缓存，最多5秒
+			if not npcIdCache[storeName] then
+				print("[Yutong] 等待 PromptChat 缓存", storeName)
+				notify(storeName .. " 等待NPC缓存...", "info")
+				local t0 = tick()
+				while tick() - t0 < 5 do
+					if npcIdCache[storeName] then break end
+					task.wait(0.1)
+				end
+			end
+			local cachedId = npcIdCache[storeName]
 			if not cachedId then
-				print("[Yutong] 无缓存ID", storeName)
-				notify(storeName .. " 无缓存NPC ID，请先靠近商店", "warn")
+				print("[Yutong] 5秒内无 PromptChat 缓存", storeName)
+				notify(storeName .. " 无NPC缓存，靠近商店后重试", "warn")
 				return false, nil
 			end
 			ctx.ID = cachedId
-			npcIdCache[storeName] = cachedId
 
 			if type(moneyBefore) ~= "number" then
 				moneyBefore = getMoney()
