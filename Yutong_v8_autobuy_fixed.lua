@@ -3455,7 +3455,7 @@ local function findCounterInStore(storeModel)
 	if not storeModel then return WOODRUS_COUNTER end
 	-- 固定柜台
 	if storeModel.Name == "PlantomicsChoice" then
-		return Vector3.new(189.0, 14.3, -2662.6)
+		return Vector3.new(189.460709, 11.7010088, -2662.41968)
 	end
 	local best, bestDist = nil, 9999
 	local center = getModelPos(storeModel) or WOODRUS_COUNTER
@@ -4689,13 +4689,12 @@ local placePos = {
 
 			print("[Yutong] 恶魔鸭购买", matName, storeName, counter)
 			teleportOneItem(prod, counter)
-			task.wait(0.15)
+			task.wait(0.08)
 			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 			if hrp then
-				hrp.CFrame = CFrame.new(counter + Vector3.new(3, 2.2, 0), counter)
-				pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
+				hrp.CFrame = CFrame.new(counter, counter)
 			end
-			task.wait(0.15)
+			task.wait(0.05)
 
 			local moneyBefore = getMoney()
 			local bought, hitId = false, nil
