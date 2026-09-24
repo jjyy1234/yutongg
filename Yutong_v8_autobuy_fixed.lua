@@ -4736,64 +4736,7 @@ local placePos = {
 				end
 			end
 
-			-- 兜底：本地复制同一试 ID 逻辑
-			if not bought then
-				local npcDlg = ReplicatedStorage:FindFirstChild("NPCDialog")
-				local playerChatted = npcDlg and npcDlg:FindFirstChild("PlayerChatted")
-				local setVal = npcDlg and npcDlg:FindFirstChild("SetChattingValue")
-				local store = Workspace.Stores and Workspace.Stores:FindFirstChild(storeName)
-				local thom = nil
-				if store then
-					for _, c in ipairs(store:GetChildren()) do
-						if c:FindFirstChild("Dialog") and c.Name ~= "ShopItems" then
-							thom = c
-							break
-						end
-					end
-				end
-				if playerChatted and thom then
-					local bases = {24}
-					pcall(function() bases = getStoreBaseIds(storeName) end)
-					local ids, seen = {}, {}
-					local function add(id)
-						if type(id) == "number" and not seen[id] then
-							seen[id] = true
-							table.insert(ids, id)
-						end
-					end
-					local cachedId = npcIdCache[storeName]
-					if not cachedId then
-						print("[Yutong] 兜底购买: 无缓存ID store=", storeName)
-					else
-						local ctx = npcCtxCache[storeName] or {
-							Character = thom,
-							Name = thom.Name,
-							ID = cachedId,
-							Dialog = thom:FindFirstChild("Dialog"),
-						}
-						ctx.ID = cachedId
-						local before = getMoney() or moneyBefore
-						pcall(function() playerChatted:InvokeServer(ctx, "Initiate") end)
-						task.wait(0.05)
-						pcall(function() playerChatted:InvokeServer(ctx, "ConfirmPurchase") end)
-						local t0 = tick()
-						while tick() - t0 < 0.22 do
-							local m = getMoney()
-							if type(before) == "number" and type(m) == "number" and m < before - 0.5 then
-								bought, hitId = true, cachedId
-								npcIdCache[storeName] = cachedId
-								npcIdConfirmed[storeName] = true
-								break
-							end
-							task.wait(0.05)
-						end
-						pcall(function()
-							playerChatted:InvokeServer(ctx, "EndChat")
-							if setVal then setVal:InvokeServer(0) end
-						end)
-					end
-				end
-			end
+
 
 			if bought then
 				pcall(function() notify("已购 " .. matName .. (hitId and (" ID:" .. hitId) or ""), "success") end)
