@@ -3894,25 +3894,6 @@ task.spawn(function()
 			return nil
 		end
 
-		local function scanNpcId(thom)
-			if not thom then return nil end
-			local dialog = thom:FindFirstChild("Dialog")
-			for _, root in ipairs({ thom, dialog }) do
-				if root then
-					local idv = root:FindFirstChild("ID")
-					if idv and idv:IsA("ValueBase") then
-						return idv.Value
-					end
-					for _, d in ipairs(root:GetDescendants()) do
-						if d.Name == "ID" and d:IsA("ValueBase") then
-							return d.Value
-						end
-					end
-				end
-			end
-			return nil
-		end
-
 		local function getThomContext(storeName)
 			storeName = storeName or "WoodRUs"
 			if npcCtxCache[storeName] and npcCtxCache[storeName].Character then
@@ -3928,7 +3909,7 @@ task.spawn(function()
 				return nil
 			end
 			local dialog = thom:FindFirstChild("Dialog")
-			local id = scanNpcId(thom) or npcIdCache[storeName] or npcIdCache[thom.Name] or 24
+			local id = npcIdCache[storeName] or npcIdCache[thom.Name] or 24
 			npcIdCache[storeName] = id
 			local ctx = {
 				Character = thom,
