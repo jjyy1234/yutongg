@@ -4624,14 +4624,18 @@ local placePos = {
 			print("[Yutong] hrp=", hrp)
 			if hrp then
 				local npcPos5 = counter
-				local ctx5, thom5 = getThomContext(storeName)
+				local ok_ctx, ctx5, thom5 = pcall(getThomContext, storeName)
+				if not ok_ctx then
+					print("[Yutong] getThomContext崩了", ctx5)
+					ctx5, thom5 = nil, nil
+				end
 				print("[Yutong] thom5=", thom5)
 				if thom5 then
 					local ok5, pp5 = pcall(function() return thom5:GetPivot().Position end)
 					if ok5 and pp5 then npcPos5 = pp5 end
 				end
 				print("[Yutong] 传人物到", npcPos5)
-				hrp.CFrame = CFrame.new(npcPos5 + Vector3.new(0, 4, 0))
+				pcall(function() hrp.CFrame = CFrame.new(npcPos5 + Vector3.new(0, 4, 0)) end)
 				pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 			end
 			task.wait(0.15)
