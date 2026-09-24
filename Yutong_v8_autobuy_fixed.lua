@@ -6203,6 +6203,7 @@ task.spawn(function()
 				local mt = getrawmetatable(game)
 				if not mt then return end
 				local old = mt.__namecall
+				if not old then return end  -- __namecall 是 nil，无法 hook
 				if setreadonly then setreadonly(mt, false) end
 				local wrapper = function(self, ...)
 					local method = getnamecallmethod()
