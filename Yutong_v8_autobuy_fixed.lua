@@ -3802,6 +3802,28 @@ task.spawn(function()
 			local stores = Workspace:FindFirstChild("Stores")
 			local store = stores and stores:FindFirstChild(storeName)
 			local thom = findStoreNpc(store)
+			-- 找不到就在整个 Stores 里搜最近有 Dialog 的 NPC
+			if not thom and stores then
+				local counter = getStoreCounter(storeName)
+				local bestDist = math.huge
+				for _, s in ipairs(stores:GetChildren()) do
+					local npc = findStoreNpc(s)
+					if npc then
+						local ok, pos = pcall(function() return npc:GetPivot().Position end)
+						if ok and pos then
+							local d = (pos - counter).Magnitude
+							if d < bestDist then
+								bestDist = d
+								thom = npc
+								store = s
+							end
+						end
+					end
+				end
+				if thom then
+					print("[Yutong] NPC回退最近:", storeName, "->", thom.Name, "dist=", bestDist)
+				end
+			end
 			if not thom then
 				print("[Yutong] 商店无NPC:", storeName)
 				return nil
