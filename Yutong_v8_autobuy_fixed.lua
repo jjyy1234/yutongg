@@ -30,6 +30,16 @@ if not AUTHORIZED_USERS[_authPlayer.Name] then
 	return
 end
 
+-- ===== 版本号 =====
+local YUTONG_VERSION = "V8.1.2"
+pcall(function()
+	game:GetService("StarterGui"):SetCore("SendNotification", {
+		Title = "Yutong Script",
+		Text = YUTONG_VERSION .. " 已加载",
+		Duration = 3
+	})
+end)
+
 -- ===== 剑伤害表 =====
 
 
@@ -3974,14 +3984,15 @@ task.spawn(function()
 		_G.YutongSilentConfirm = silentConfirmPurchase
 
 		local buying = false
+		local buyStop = false
 		startBtn.MouseButton1Click:Connect(function()
 			print("[Yutong] 开始购买 clicked", "buying=", buying)
 			pcall(function() notify("开始购买...", "info") end)
 			if buying then
-				-- 防止卡死：强制解锁
-				print("[Yutong] 上次购买标记仍为 true，强制解锁")
-				buying = false
-				startBtn.Text = "开始购买"
+				-- 正在跑：点击=停止
+				buyStop = true
+				startBtn.Text = "停止中..."
+				return
 			end
 			local s = currentShop()
 			local p = currentProduct()
@@ -4033,6 +4044,7 @@ task.spawn(function()
 					end
 
 					for q = 1, buyQuantity do
+						if buyStop then break end
 						-- 等到有无主商品（柜台刷新），不要立刻失败
 						status.Text = string.format("%d/%d 等商品刷新", q, buyQuantity)
 						local model = nil
@@ -4175,6 +4187,7 @@ task.spawn(function()
 				end
 				startBtn.Text = "开始购买"
 				buying = false
+				buyStop = false
 				print("[Yutong] 购买流程结束 buying=false")
 			end)
 		end)
@@ -4212,9 +4225,12 @@ task.spawn(function()
 		Instance.new("UICorner", bpBuyBtn).CornerRadius = UDim.new(0, px(4))
 
 		local bpBuying = false
+		local bpBuyStop = false
 		bpBuyBtn.MouseButton1Click:Connect(function()
 			if bpBuying or buying then
-				notify("正在购买中", "warn")
+				-- 正在跑：点击=停止
+				bpBuyStop = true
+				bpBuyBtn.Text = "停止中..."
 				return
 			end
 			bpBuying = true
@@ -4227,6 +4243,7 @@ task.spawn(function()
 					local originCF = hrp and hrp.CFrame
 					local okCount = 0
 					for bi, bpName in ipairs(ALL_BLUEPRINTS) do
+						if bpBuyStop then break end
 						status.Text = string.format("蓝图 %d/%d %s", bi, #ALL_BLUEPRINTS, bpName)
 						pcall(function() notify("购买蓝图: " .. bpName, "info") end)
 						local model = nil
@@ -4306,6 +4323,7 @@ task.spawn(function()
 				end
 				bpBuyBtn.Text = "自动购买所有蓝图"
 				bpBuying = false
+				bpBuyStop = false
 			end)
 		end)
 
@@ -6025,6 +6043,8 @@ contDemonBtn.MouseButton1Click:Connect(function()
 	contDemonBtn.TextColor3 = Color3.fromRGB(72, 108, 88)
 	pcall(function() notify("开始持续合成恶魔鸭", "success") end)
 	task.spawn(function()
+		local _hrp0 = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+		local _originCF = _hrp0 and _hrp0.CFrame
 		while contDemonDuck do
 			-- 触发一次「自动合成恶魔鸭」
 			local fired = false
@@ -6063,7 +6083,11 @@ contDemonBtn.MouseButton1Click:Connect(function()
 				task.wait(0.35)
 			end
 			if not contDemonDuck then break end
-			-- 成功或结束一轮后等 3 秒
+			-- 本轮结束，返回原地等 3 秒再重试
+			local _hrpNow = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+			if _originCF and _hrpNow then
+				pcall(function() _hrpNow.CFrame = _originCF end)
+			end
 			for i = 3, 1, -1 do
 				if not contDemonDuck then break end
 				contDemonBtn.Text = string.format("持续合成 等待 %ds", i)
