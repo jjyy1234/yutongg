@@ -4011,6 +4011,7 @@ task.spawn(function()
 				return
 			end
 
+			buyStop = false
 			buying = true
 			startBtn.Text = "购买中..."
 			task.spawn(function()
@@ -4233,6 +4234,7 @@ task.spawn(function()
 				bpBuyBtn.Text = "停止中..."
 				return
 			end
+			bpBuyStop = false
 			bpBuying = true
 			bpBuyBtn.Text = "蓝图购买中..."
 			task.spawn(function()
@@ -4631,6 +4633,7 @@ local placePos = {
 			teleportOneItem(prod, counter)
 			print("[Yutong] teleportOneItem done, 准备传人物")
 			task.wait(0.15)
+			if not contDemonDuck then return nil end
 			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 			print("[Yutong] hrp=", hrp)
 			if hrp then
@@ -4650,6 +4653,7 @@ local placePos = {
 				pcall(function() hrp.AssemblyLinearVelocity = Vector3.zero end)
 			end
 			task.wait(0.15)
+			if not contDemonDuck then return nil end
 
 			local moneyBefore = getMoney()
 			local bought, hitId = false, nil
@@ -4682,6 +4686,13 @@ local placePos = {
 				or (type(matName) == "string" and matName:find("鸭子"))
 		end
 		for i, matName in ipairs(need) do
+			if not contDemonDuck then
+				hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+				if hrp then hrp.CFrame = originalCF end
+				btn.Text = "自动合成恶魔鸭"
+				btn.BackgroundColor3 = Color3.fromRGB(180, 100, 100)
+				return
+			end
 			btn.Text = "查找 " .. matName
 			local item = nil
 			if isDuckMat(matName) then
@@ -4738,9 +4749,17 @@ local placePos = {
 		-- 放置到合成点（稍慢，保证落稳）
 		pcall(function() notify("传送材料到祭坛", "info") end)
 		for i = 1, 3 do
+			if not contDemonDuck then break end
 			btn.Text = string.format("放置%d", i)
 			teleportOneItem(owned[i], placePos[i])
 			task.wait(0.2)
+		end
+		if not contDemonDuck then
+			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then hrp.CFrame = originalCF end
+			btn.Text = "自动合成恶魔鸭"
+			btn.BackgroundColor3 = Color3.fromRGB(180, 100, 100)
+			return
 		end
 
 		local altarPos = Vector3.new(-224.2, 59.1, 924.8)
@@ -4798,6 +4817,7 @@ local placePos = {
 
 		btn.Text = "开盒..."
 		for i = 1, 3 do
+			if not contDemonDuck then break end
 			local pos = placePos[i]
 			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
 			if hrp and pos then
@@ -4806,6 +4826,13 @@ local placePos = {
 			task.wait(0.2)
 			selectThenOpen(owned[i], need[i] or ("材料"..i))
 			task.wait(0.35)
+		end
+		if not contDemonDuck then
+			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then hrp.CFrame = originalCF end
+			btn.Text = "自动合成恶魔鸭"
+			btn.BackgroundColor3 = Color3.fromRGB(180, 100, 100)
+			return
 		end
 
 		-- 监测新出现的无主 DuckEvil
@@ -4824,6 +4851,7 @@ local placePos = {
 			local newDuck = nil
 			local t0 = tick()
 			while tick() - t0 < seconds do
+				if not contDemonDuck then return nil end
 				newDuck = findNewDuckEvil()
 				if newDuck then return newDuck end
 				task.wait(0.1)
@@ -4831,12 +4859,15 @@ local placePos = {
 			return findNewDuckEvil()
 		end
 
-		-- 开盒后监测，没出鸭就无限重放直到出现
+		-- 开盒后监测，没出鸭就重放（最多15次），仍未出则标记失败
 		local newDuck = nil
 		local retryCount = 0
+		local MAX_RETRIES = 15
 		newDuck = waitNewDuck(1.0)
 		while not newDuck do
+			if not contDemonDuck then break end
 			retryCount = retryCount + 1
+			if retryCount > MAX_RETRIES then break end
 			btn.Text = string.format("重放材料 #%d", retryCount)
 			pcall(function() notify(string.format("未出鸭，第%d次重放", retryCount), "warn") end)
 			for i = 1, 3 do
@@ -4848,6 +4879,13 @@ local placePos = {
 			newDuck = waitNewDuck(0.8)
 		end
 
+		if not contDemonDuck then
+			hrp = speaker.Character and speaker.Character:FindFirstChild("HumanoidRootPart")
+			if hrp then hrp.CFrame = originalCF end
+			btn.Text = "自动合成恶魔鸭"
+			btn.BackgroundColor3 = Color3.fromRGB(180, 100, 100)
+			return
+		end
 		if newDuck then
 			btn.Text = "带回新恶魔鸭"
 			teleportOneItem(newDuck, originalCF.Position)
@@ -6074,7 +6112,7 @@ contDemonBtn.MouseButton1Click:Connect(function()
 			local t0 = tick()
 			while contDemonDuck and tick() - t0 < 150 do
 				local t = tostring(autoDemonDuckTestBtn.Text or "")
-				if t == "自动合成恶魔鸭" or t == "合成成功" or t == "无新鸭子" or t == "已拒绝" or t:find("缺") then
+				if t == "自动合成恶魔鸭" or t == "合成成功" or t == "无新鸭子" or t == "已拒绝" or t == "合成失败" or t == "材料识别失败" or t:find("缺") then
 					-- 再等一小会让收尾跑完
 					task.wait(0.5)
 					break
