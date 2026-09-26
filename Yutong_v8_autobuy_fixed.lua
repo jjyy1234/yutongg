@@ -3332,10 +3332,14 @@ teleportOneItem = function(item, targetPos)
 		and ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
 	if not dragRemote then return false end
 
-	-- 目标：贴地/贴柜台，不要从高空砸下去
-	local tp = typeof(targetPos) == "Vector3" and targetPos or Vector3.new(targetPos.X, targetPos.Y, targetPos.Z)
-	local placeY = tp.Y
-	local targetCF = CFrame.new(tp.X, placeY, tp.Z)
+	-- 目标：支持 Vector3 或 CFrame（带旋转）
+	local targetCF
+	if typeof(targetPos) == "CFrame" then
+		targetCF = targetPos
+	else
+		local tp = typeof(targetPos) == "Vector3" and targetPos or Vector3.new(targetPos.X, targetPos.Y, targetPos.Z)
+		targetCF = CFrame.new(tp.X, tp.Y, tp.Z)
+	end
 
 	local function zeroVel()
 		pcall(function()
@@ -8219,7 +8223,17 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
             local model = sec.Parent
             pcall(function()
                 if type(teleportOneItem) == "function" then
-                    teleportOneItem(model, sawPos)
+                    -- 用 sawmill 的 CFrame（带朝向），让木头对齐锯木机方向
+                    local sawCF
+                    pcall(function()
+                        if saw:FindFirstChild("Particles") then
+                            sawCF = saw.Particles.CFrame + Vector3.new(0.7, 0, 0)
+                        else
+                            local p = saw:FindFirstChildWhichIsA("BasePart", true)
+                            if p then sawCF = p.CFrame + Vector3.new(0, 1, 0) end
+                        end
+                    end)
+                    teleportOneItem(model, sawCF or sawPos)
                 else
                     local h = speaker.Character.HumanoidRootPart
                     h.CFrame = CFrame.new(sec.CFrame.p + Vector3.new(2, 2, 0))
