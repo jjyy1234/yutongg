@@ -6936,7 +6936,10 @@ end
 local function getTools()
     local tools = {}
     table_foreach(speaker.Backpack:GetChildren(), function(_, v)
-        if v.Name ~= "BlueprintTool" then tools[#tools + 1] = v end
+        -- 只要有 ToolName（斧头标志），排除 PaintTool/BlueprintTool 等非斧头
+        if v:FindFirstChild("ToolName") then
+            tools[#tools + 1] = v
+        end
     end)
     return tools
 end
