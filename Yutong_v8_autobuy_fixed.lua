@@ -2718,7 +2718,7 @@ local setPointBtn = Instance.new("TextButton")
 setPointBtn.Name = "SetPoint"
 setPointBtn.Parent = teleportPage
 setPointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-setPointBtn.Position = UDim2.new(0, px(4), 0, px(188))
+setPointBtn.Position = UDim2.new(0, px(4), 0, px(136))
 setPointBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 setPointBtn.BorderSizePixel = 0
 setPointBtn.Text = "设置传送点"
@@ -2757,7 +2757,7 @@ local deletePointBtn = Instance.new("TextButton")
 deletePointBtn.Name = "DeletePoint"
 deletePointBtn.Parent = teleportPage
 deletePointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-deletePointBtn.Position = UDim2.new(0, px(4), 0, px(210))
+deletePointBtn.Position = UDim2.new(0, px(4), 0, px(158))
 deletePointBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 deletePointBtn.BorderSizePixel = 0
 deletePointBtn.Text = "删除传送点"
@@ -2787,7 +2787,7 @@ local selectModeLabel = Instance.new("TextLabel")
 selectModeLabel.Name = "SelectModeLabel"
 selectModeLabel.Parent = teleportPage
 selectModeLabel.BackgroundTransparency = 1
-selectModeLabel.Position = UDim2.new(0, px(30), 0, px(232))
+selectModeLabel.Position = UDim2.new(0, px(30), 0, px(180))
 selectModeLabel.Size = UDim2.new(0, px(80), 0, px(12))
 selectModeLabel.Text = "选择物品 (点击)"
 selectModeLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2799,7 +2799,7 @@ local selectSameBtn = Instance.new("TextButton")
 selectSameBtn.Name = "SelectSame"
 selectSameBtn.Parent = teleportPage
 selectSameBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBtn.Position = UDim2.new(0, px(4), 0, px(254))
+selectSameBtn.Position = UDim2.new(0, px(4), 0, px(202))
 selectSameBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBtn.BorderSizePixel = 0
 selectSameBtn.Text = "选择同名物品"
@@ -2846,7 +2846,7 @@ local clearSelectedBtn = Instance.new("TextButton")
 clearSelectedBtn.Name = "ClearSelected"
 clearSelectedBtn.Parent = teleportPage
 clearSelectedBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(276))
+clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(224))
 clearSelectedBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearSelectedBtn.BorderSizePixel = 0
 clearSelectedBtn.Text = "删除所有选中"
@@ -2868,7 +2868,7 @@ local startTeleportItemsBtn = Instance.new("TextButton")
 startTeleportItemsBtn.Name = "StartTeleportItems"
 startTeleportItemsBtn.Parent = teleportPage
 startTeleportItemsBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(298))
+startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(246))
 startTeleportItemsBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 startTeleportItemsBtn.BorderSizePixel = 0
 startTeleportItemsBtn.Text = "开始传送物品"
@@ -2883,7 +2883,7 @@ local boxLabel = Instance.new("TextLabel")
 boxLabel.Name = "BoxLabel"
 boxLabel.Parent = teleportPage
 boxLabel.BackgroundTransparency = 1
-boxLabel.Position = UDim2.new(0, px(4), 0, px(322))
+boxLabel.Position = UDim2.new(0, px(4), 0, px(270))
 boxLabel.Size = UDim2.new(1, -px(8), 0, px(12))
 boxLabel.Text = "一键开箱"
 boxLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2898,7 +2898,7 @@ local selectBoxBtn = Instance.new("TextButton")
 selectBoxBtn.Name = "SelectBoxBtn"
 selectBoxBtn.Parent = teleportPage
 selectBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectBoxBtn.Position = UDim2.new(0, px(4), 0, px(336))
+selectBoxBtn.Position = UDim2.new(0, px(4), 0, px(284))
 selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectBoxBtn.BorderSizePixel = 0
 selectBoxBtn.Text = "点击选择箱子"
@@ -7157,7 +7157,7 @@ bringTree = function(treeClass)
             return
         end
         tp(tree.CFrame + Vector3.new(4, 2, 2))
-        cutPart(tree.Parent.CutEvent, 1, 0.4, data, treeClass)
+        cutPart(tree.Parent.CutEvent, 1, 0.55, data, treeClass)
         task.wait(0.05)
     end
 
