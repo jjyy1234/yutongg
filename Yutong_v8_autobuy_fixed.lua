@@ -31,7 +31,7 @@ if not AUTHORIZED_USERS[_authPlayer.Name] then
 end
 
 -- ===== 版本号 =====
-local YUTONG_VERSION = "V8.1.3"
+local YUTONG_VERSION = "V8.1.4"
 pcall(function()
 	game:GetService("StarterGui"):SetCore("SendNotification", {
 		Title = "Yutong Script",
@@ -689,6 +689,7 @@ _G.CameraFOV = 70
 local selectMode = false
 local selectedItems = {}
 local teleportPoint = nil
+local itemOwnerMode = nil
 local markerBall = nil
 local selectionBoxes = {}
 local itemNotifyFrame = nil
@@ -2612,109 +2613,112 @@ itemTeleportLabel.TextSize = px(9)
 itemTeleportLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 
-local teleportOwnerMode = "自己+无主" -- "自己" / "无主" / "自己+无主"
-
-local function matchesOwnerMode(obj)
-	if teleportOwnerMode == "自己" then
-		return isOwnedByMe(obj)
-	elseif teleportOwnerMode == "无主" then
-		return isUnowned(obj)
-	else -- "自己+无主"
+-- matchOwner: nil=自己+无主, string=指定玩家名
+local function matchOwner(obj)
+	if itemOwnerMode == nil then
 		return isOwnedByMe(obj) or isUnowned(obj)
-	end
-end
-
-local ownerBtnSelf = Instance.new("TextButton")
-ownerBtnSelf.Name = "OwnerSelf"
-ownerBtnSelf.Parent = teleportPage
-ownerBtnSelf.Size = UDim2.new(0.32, 0, 0, px(18))
-ownerBtnSelf.Position = UDim2.new(0, px(4), 0, px(136))
-ownerBtnSelf.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-ownerBtnSelf.BorderSizePixel = 0
-ownerBtnSelf.Text = "自己"
-ownerBtnSelf.TextColor3 = Color3.fromRGB(80, 90, 100)
-ownerBtnSelf.Font = Enum.Font.GothamBold
-ownerBtnSelf.TextSize = px(9)
-ownerBtnSelf.AutoButtonColor = false
-Instance.new("UICorner", ownerBtnSelf).CornerRadius = UDim.new(0, px(4))
-
-local ownerBtnUnowned = Instance.new("TextButton")
-ownerBtnUnowned.Name = "OwnerUnowned"
-ownerBtnUnowned.Parent = teleportPage
-ownerBtnUnowned.Size = UDim2.new(0.32, 0, 0, px(18))
-ownerBtnUnowned.Position = UDim2.new(0.34, 0, 0, px(136))
-ownerBtnUnowned.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-ownerBtnUnowned.BorderSizePixel = 0
-ownerBtnUnowned.Text = "无主"
-ownerBtnUnowned.TextColor3 = Color3.fromRGB(80, 90, 100)
-ownerBtnUnowned.Font = Enum.Font.GothamBold
-ownerBtnUnowned.TextSize = px(9)
-ownerBtnUnowned.AutoButtonColor = false
-Instance.new("UICorner", ownerBtnUnowned).CornerRadius = UDim.new(0, px(4))
-
-local ownerBtnBoth = Instance.new("TextButton")
-ownerBtnBoth.Name = "OwnerBoth"
-ownerBtnBoth.Parent = teleportPage
-ownerBtnBoth.Size = UDim2.new(0.32, 0, 0, px(18))
-ownerBtnBoth.Position = UDim2.new(0.68, 0, 0, px(136))
-ownerBtnBoth.BackgroundColor3 = Color3.fromRGB(50, 100, 160)
-ownerBtnBoth.BorderSizePixel = 0
-ownerBtnBoth.Text = "自己+无主"
-ownerBtnBoth.TextColor3 = Color3.fromRGB(255, 255, 255)
-ownerBtnBoth.Font = Enum.Font.GothamBold
-ownerBtnBoth.TextSize = px(9)
-ownerBtnBoth.AutoButtonColor = false
-Instance.new("UICorner", ownerBtnBoth).CornerRadius = UDim.new(0, px(4))
-
-local function updateOwnerBtnColors()
-	if teleportOwnerMode == "自己" then
-		ownerBtnSelf.BackgroundColor3 = Color3.fromRGB(50, 100, 160)
-		ownerBtnSelf.TextColor3 = Color3.fromRGB(255, 255, 255)
-		ownerBtnUnowned.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnUnowned.TextColor3 = Color3.fromRGB(80, 90, 100)
-		ownerBtnBoth.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnBoth.TextColor3 = Color3.fromRGB(80, 90, 100)
-	elseif teleportOwnerMode == "无主" then
-		ownerBtnSelf.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnSelf.TextColor3 = Color3.fromRGB(80, 90, 100)
-		ownerBtnUnowned.BackgroundColor3 = Color3.fromRGB(50, 100, 160)
-		ownerBtnUnowned.TextColor3 = Color3.fromRGB(255, 255, 255)
-		ownerBtnBoth.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnBoth.TextColor3 = Color3.fromRGB(80, 90, 100)
 	else
-		ownerBtnSelf.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnSelf.TextColor3 = Color3.fromRGB(80, 90, 100)
-		ownerBtnUnowned.BackgroundColor3 = Color3.fromRGB(200, 210, 225)
-		ownerBtnUnowned.TextColor3 = Color3.fromRGB(80, 90, 100)
-		ownerBtnBoth.BackgroundColor3 = Color3.fromRGB(50, 100, 160)
-		ownerBtnBoth.TextColor3 = Color3.fromRGB(255, 255, 255)
+		local ov = obj:FindFirstChild("Owner")
+		if not ov then return false end
+		if typeof(ov.Value) == "Instance" and ov.Value:IsA("Player") then
+			return ov.Value.Name == itemOwnerMode
+		elseif typeof(ov.Value) == "string" then
+			return ov.Value == itemOwnerMode
+		end
+		return false
 	end
-	itemTeleportLabel.Text = "物品传送 (Owner: " .. teleportOwnerMode .. ")"
 end
 
-ownerBtnSelf.MouseButton1Click:Connect(function()
-	teleportOwnerMode = "自己"
-	updateOwnerBtnColors()
-	pcall(function() notify("Owner 模式: 自己", "info") end)
-end)
+-- Owner 下拉触发按钮
+local ownerDropdownBtn = Instance.new("TextButton")
+ownerDropdownBtn.Name = "OwnerDropdown"
+ownerDropdownBtn.Parent = teleportPage
+ownerDropdownBtn.Size = UDim2.new(1, -px(8), 0, px(18))
+ownerDropdownBtn.Position = UDim2.new(0, px(4), 0, px(136))
+ownerDropdownBtn.BackgroundColor3 = Color3.fromRGB(235, 225, 233)
+ownerDropdownBtn.BorderSizePixel = 0
+ownerDropdownBtn.Text = "Owner: 自己+无主"
+ownerDropdownBtn.TextColor3 = Color3.fromRGB(112, 91, 145)
+ownerDropdownBtn.Font = Enum.Font.GothamBold
+ownerDropdownBtn.TextSize = px(9)
+ownerDropdownBtn.AutoButtonColor = false
+Instance.new("UICorner", ownerDropdownBtn).CornerRadius = UDim.new(0, px(4))
 
-ownerBtnUnowned.MouseButton1Click:Connect(function()
-	teleportOwnerMode = "无主"
-	updateOwnerBtnColors()
-	pcall(function() notify("Owner 模式: 无主", "info") end)
-end)
+-- Owner 下拉列表（ScrollingFrame，每次点击时动态刷新玩家）
+local ownerDropdownList = Instance.new("ScrollingFrame")
+ownerDropdownList.Name = "OwnerDropdownList"
+ownerDropdownList.Parent = teleportPage
+ownerDropdownList.Size = UDim2.new(1, -px(8), 0, px(60))
+ownerDropdownList.Position = UDim2.new(0, px(4), 0, px(154))
+ownerDropdownList.BackgroundColor3 = Color3.fromRGB(235, 225, 233)
+ownerDropdownList.BorderSizePixel = 0
+ownerDropdownList.ScrollBarThickness = 3
+ownerDropdownList.ScrollBarImageColor3 = Color3.fromRGB(180, 160, 170)
+ownerDropdownList.Visible = false
+ownerDropdownList.ZIndex = 20
+Instance.new("UICorner", ownerDropdownList).CornerRadius = UDim.new(0, px(4))
 
-ownerBtnBoth.MouseButton1Click:Connect(function()
-	teleportOwnerMode = "自己+无主"
-	updateOwnerBtnColors()
-	pcall(function() notify("Owner 模式: 自己+无主", "info") end)
+local ownerListLayout = Instance.new("UIListLayout")
+ownerListLayout.Parent = ownerDropdownList
+ownerListLayout.Padding = UDim.new(0, 1)
+ownerListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- 改动 D: 每次点击下拉时重新 GetPlayers 刷新列表
+local function buildOwnerDropdownEntries()
+	-- 清除旧条目
+	for _, child in ipairs(ownerDropdownList:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+	local entries = {}
+	table.insert(entries, "自己+无主")
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= speaker then
+			table.insert(entries, plr.Name)
+		end
+	end
+	for i, name in ipairs(entries) do
+		local itemBtn = Instance.new("TextButton")
+		itemBtn.Name = "OwnerEntry_" .. i
+		itemBtn.Parent = ownerDropdownList
+		itemBtn.Size = UDim2.new(1, 0, 0, 16)
+		itemBtn.BackgroundTransparency = 1
+		itemBtn.Text = name
+		itemBtn.TextColor3 = Color3.fromRGB(90, 70, 85)
+		itemBtn.Font = Enum.Font.GothamMedium
+		itemBtn.TextSize = px(8)
+		itemBtn.TextXAlignment = Enum.TextXAlignment.Left
+		itemBtn.AutoButtonColor = false
+		itemBtn.ZIndex = 21
+
+		itemBtn.MouseButton1Click:Connect(function()
+			if name == "自己+无主" then
+				itemOwnerMode = nil
+			else
+				itemOwnerMode = name
+			end
+			ownerDropdownBtn.Text = "Owner: " .. name
+			itemTeleportLabel.Text = "物品传送 (Owner: " .. name .. ")"
+			ownerDropdownList.Visible = false
+			pcall(function() notify("Owner 模式: " .. name, "info") end)
+		end)
+	end
+	ownerDropdownList.CanvasSize = UDim2.new(0, 0, 0, #entries * 20)
+end
+
+ownerDropdownBtn.MouseButton1Click:Connect(function()
+	ownerDropdownList.Visible = not ownerDropdownList.Visible
+	if ownerDropdownList.Visible then
+		buildOwnerDropdownEntries()
+	end
 end)
 
 local setPointBtn = Instance.new("TextButton")
 setPointBtn.Name = "SetPoint"
 setPointBtn.Parent = teleportPage
 setPointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-setPointBtn.Position = UDim2.new(0, px(4), 0, px(162))
+setPointBtn.Position = UDim2.new(0, px(4), 0, px(188))
 setPointBtn.BackgroundColor3 = Color3.fromRGB(190, 224, 242)
 setPointBtn.BorderSizePixel = 0
 setPointBtn.Text = "设置传送点"
@@ -2753,7 +2757,7 @@ local deletePointBtn = Instance.new("TextButton")
 deletePointBtn.Name = "DeletePoint"
 deletePointBtn.Parent = teleportPage
 deletePointBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-deletePointBtn.Position = UDim2.new(0, px(4), 0, px(184))
+deletePointBtn.Position = UDim2.new(0, px(4), 0, px(210))
 deletePointBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 deletePointBtn.BorderSizePixel = 0
 deletePointBtn.Text = "删除传送点"
@@ -2772,7 +2776,7 @@ deletePointBtn.MouseButton1Click:Connect(function()
 	pcall(function() notify("已清除传送点", "info") end)
 end)
 
-local selectModeToggle = createToggle(teleportPage, px(4), px(206), false, function(on)
+local selectModeToggle = createToggle(teleportPage, px(4), px(232), false, function(on)
 	selectMode = on
 	pcall(function()
 		notify(on and "选择模式：开 · 点击物品选中" or "选择模式：关", on and "success" or "info")
@@ -2783,7 +2787,7 @@ local selectModeLabel = Instance.new("TextLabel")
 selectModeLabel.Name = "SelectModeLabel"
 selectModeLabel.Parent = teleportPage
 selectModeLabel.BackgroundTransparency = 1
-selectModeLabel.Position = UDim2.new(0, px(30), 0, px(206))
+selectModeLabel.Position = UDim2.new(0, px(30), 0, px(232))
 selectModeLabel.Size = UDim2.new(0, px(80), 0, px(12))
 selectModeLabel.Text = "选择物品 (点击)"
 selectModeLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2795,7 +2799,7 @@ local selectSameBtn = Instance.new("TextButton")
 selectSameBtn.Name = "SelectSame"
 selectSameBtn.Parent = teleportPage
 selectSameBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBtn.Position = UDim2.new(0, px(4), 0, px(228))
+selectSameBtn.Position = UDim2.new(0, px(4), 0, px(254))
 selectSameBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBtn.BorderSizePixel = 0
 selectSameBtn.Text = "选择同名物品"
@@ -2818,7 +2822,7 @@ selectSameBtn.MouseButton1Click:Connect(function()
 	local targetName = targetModel.Name
 	local added = 0
 	for _, obj in ipairs(Workspace:GetDescendants()) do
-		if obj:IsA("Model") and obj.Name == targetName and matchesOwnerMode(obj) and not table.find(selectedItems, obj) then
+		if obj:IsA("Model") and obj.Name == targetName and matchOwner(obj) and not table.find(selectedItems, obj) then
 			table.insert(selectedItems, obj)
 			local sb = Instance.new("SelectionBox")
 			sb.Adornee = obj
@@ -2842,7 +2846,7 @@ local clearSelectedBtn = Instance.new("TextButton")
 clearSelectedBtn.Name = "ClearSelected"
 clearSelectedBtn.Parent = teleportPage
 clearSelectedBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(250))
+clearSelectedBtn.Position = UDim2.new(0, px(4), 0, px(276))
 clearSelectedBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearSelectedBtn.BorderSizePixel = 0
 clearSelectedBtn.Text = "删除所有选中"
@@ -2864,7 +2868,7 @@ local startTeleportItemsBtn = Instance.new("TextButton")
 startTeleportItemsBtn.Name = "StartTeleportItems"
 startTeleportItemsBtn.Parent = teleportPage
 startTeleportItemsBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(272))
+startTeleportItemsBtn.Position = UDim2.new(0, px(4), 0, px(298))
 startTeleportItemsBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 startTeleportItemsBtn.BorderSizePixel = 0
 startTeleportItemsBtn.Text = "开始传送物品"
@@ -2879,7 +2883,7 @@ local boxLabel = Instance.new("TextLabel")
 boxLabel.Name = "BoxLabel"
 boxLabel.Parent = teleportPage
 boxLabel.BackgroundTransparency = 1
-boxLabel.Position = UDim2.new(0, px(4), 0, px(296))
+boxLabel.Position = UDim2.new(0, px(4), 0, px(322))
 boxLabel.Size = UDim2.new(1, -px(8), 0, px(12))
 boxLabel.Text = "一键开箱"
 boxLabel.TextColor3 = Color3.fromRGB(145, 103, 134)
@@ -2894,7 +2898,7 @@ local selectBoxBtn = Instance.new("TextButton")
 selectBoxBtn.Name = "SelectBoxBtn"
 selectBoxBtn.Parent = teleportPage
 selectBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectBoxBtn.Position = UDim2.new(0, px(4), 0, px(310))
+selectBoxBtn.Position = UDim2.new(0, px(4), 0, px(336))
 selectBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectBoxBtn.BorderSizePixel = 0
 selectBoxBtn.Text = "点击选择箱子"
@@ -2942,7 +2946,7 @@ local selectSameBoxBtn = Instance.new("TextButton")
 selectSameBoxBtn.Name = "SelectSameBoxBtn"
 selectSameBoxBtn.Parent = teleportPage
 selectSameBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-selectSameBoxBtn.Position = UDim2.new(0, px(4), 0, px(332))
+selectSameBoxBtn.Position = UDim2.new(0, px(4), 0, px(358))
 selectSameBoxBtn.BackgroundColor3 = Color3.fromRGB(210, 201, 239)
 selectSameBoxBtn.BorderSizePixel = 0
 selectSameBoxBtn.Text = "选择同名箱子"
@@ -2979,7 +2983,7 @@ local clearBoxBtn = Instance.new("TextButton")
 clearBoxBtn.Name = "ClearBoxBtn"
 clearBoxBtn.Parent = teleportPage
 clearBoxBtn.Size = UDim2.new(1, -px(8), 0, px(18))
-clearBoxBtn.Position = UDim2.new(0, px(4), 0, px(354))
+clearBoxBtn.Position = UDim2.new(0, px(4), 0, px(380))
 clearBoxBtn.BackgroundColor3 = Color3.fromRGB(247, 202, 211)
 clearBoxBtn.BorderSizePixel = 0
 clearBoxBtn.Text = "删除选中"
@@ -3000,7 +3004,7 @@ local openAllBoxBtn = Instance.new("TextButton")
 openAllBoxBtn.Name = "OpenAllBoxBtn"
 openAllBoxBtn.Parent = teleportPage
 openAllBoxBtn.Size = UDim2.new(1, -px(8), 0, px(20))
-openAllBoxBtn.Position = UDim2.new(0, px(4), 0, px(376))
+openAllBoxBtn.Position = UDim2.new(0, px(4), 0, px(402))
 openAllBoxBtn.BackgroundColor3 = Color3.fromRGB(194, 231, 211)
 openAllBoxBtn.BorderSizePixel = 0
 openAllBoxBtn.Text = "一键开箱"
@@ -3131,7 +3135,7 @@ Mouse.Button1Down:Connect(function()
 		pcall(function() notify("选不中：不是物品模型", "warn") end)
 		return
 	end
-	if not matchesOwnerMode(itemModel) then
+	if not matchOwner(itemModel) then
 		pcall(function() notify("选不中：不符合 Owner 模式「" .. itemModel.Name .. "」", "warn") end)
 		return
 	end
