@@ -4,9 +4,6 @@ local StarterGui = game:GetService("StarterGui")
 local Workspace = game:GetService("Workspace")
 local lp = Players.LocalPlayer
 
-local AUTH = {["gccgbxfnb0"]=true,["hxa1010"]=true,["gccgbxfnb4"]=true,["gccgbxfnb3"]=true,["xiguayyds"]=true,["xiaojun1221"]=true,["X8jone"]=true}
-if not AUTH[lp.Name] then lp:Kick("Unauthorized") return end
-
 local placeRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("ClientPlacedBlueprint")
 local paintRemote = ReplicatedStorage:WaitForChild("PlaceStructure"):WaitForChild("PaintTool")
 
