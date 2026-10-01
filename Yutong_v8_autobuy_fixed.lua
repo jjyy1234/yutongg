@@ -6989,7 +6989,7 @@ end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 WEAPON_DB = {
-    OlReliable = {
+    ["Ol' Reliable"] = {
         cooldown = 0.34554792881011964,
         height = 0.37510824203491211,
         faceVector = Vector3.new(0, 0, -1),
@@ -7112,14 +7112,11 @@ cutAllSections = function(sections, tool, treeClass, weaponData, cutEvent)
 end
 
 cutPart = function(event, section, height, tool, treeClass, cachedStats)
-    local weaponData, wName = getWeaponData(tool)
-    print("[v8 cut] tool=", tool and tool.Name, "wName=", wName, "weaponData=", weaponData ~= nil, "treeClass=", treeClass)
+    local weaponData = getWeaponData(tool)
     if not weaponData then
-        print("[v8 cut] weaponData nil, abort")
         return
     end
     local hp, reason = resolveHitPoints(weaponData, treeClass)
-    print("[v8 cut] hp=", hp, "reason=", reason)
     if not hp then
         return
     end
