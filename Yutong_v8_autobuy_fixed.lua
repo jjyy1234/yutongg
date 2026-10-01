@@ -6916,8 +6916,9 @@ function barkgetBestAxe2()
     for _, v in ipairs(getAxeList()) do
         if v.Name == "Tool" then
             local tn = v:FindFirstChild("ToolName")
-            if tn and WEAPON_DB[tn.Value] then
-                local hp = WEAPON_DB[tn.Value].hitPoints
+            if tn then
+                local db = tryRequireAxeClass(tn.Value)
+                local hp = db and db.hitPoints or 0
                 if not best or hp > bestHP then
                     best = v; bestHP = hp
                 end
@@ -6963,27 +6964,12 @@ getBestAxe = function(treeClass)
 
     local tool = scanContainer(speaker.Backpack) or scanContainer(speaker.Character)
     if tool then
-        -- 优先查 WEAPON_DB 拿精确数据
-        local tn = tool:FindFirstChild("ToolName")
-        local key = tn and tn.Value or tool.Name
-        local db = WEAPON_DB[key]
-        if db then
-            local hp, reason = resolveHitPoints(db, treeClass)
-            if hp then return true, tool end
-        end
-        -- 没有 WEAPON_DB 数据也返回工具，让 getWeaponData 动态读 AxeClassDamageOverride
         return true, tool
     end
 
     -- 再找剑
     local sword = getBestSword()
-    if sword then
-        local itemName = sword:FindFirstChild("ItemName")
-        if itemName and WEAPON_DB[itemName.Value] then
-            local hp, reason = resolveHitPoints(WEAPON_DB[itemName.Value], treeClass)
-            if hp then return true, sword end
-        end
-    end
+    if sword then return true, sword end
     return false, nil
 end
 
@@ -7078,49 +7064,7 @@ local function tryRequireAxeClass(toolName)
     return result
 end
 
-WEAPON_DB = {
-    ["Ol' Reliable"] = {
-        cooldown = 0.25629998683929445,
-        height = 0.37510824203491211,
-        faceVector = Vector3.new(-1, 0, 0),
-        hitPoints = 800,
-        cuttingClass = "Axe",
-        specialTrees = {
-            Radioactive = 10000000,
-        },
-        rejectSpecial = false,
-        rejectList = nil,
-    },
-    Doom = {
-        cooldown = 0.2532,
-        height = 0.4,
-        faceVector = Vector3.new(0, 0, -1),
-        hitPoints = 30000,
-        cuttingClass = "Axe",
-        specialTrees = {
-            BlueFlame = 3500000, Celestial = 10000000, Crystal = 16000000,
-            Flame = 10000000, Ice = 8000000, LoneCave = 10000000,
-            Magma = 5000000, Radioactive = 10000000, Void = 5000000,
-        },
-        rejectSpecial = false,
-        rejectList = { Infernal = true, Spirit = true, Shine = true },
-    },
-    Fallen = {
-        cooldown = 0.2919,
-        height = 0.4,
-        faceVector = Vector3.new(0, 0, -1),
-        hitPoints = 31000,
-        cuttingClass = "Axe",
-        specialTrees = {
-            BlueFlame = 5500000, Celestial = 10000000, Crystal = 23000000,
-            Flame = 15000000, Ice = 8000000, LoneCave = 10000000,
-            Magma = 15000000, Radioactive = 10000000, Shine = 80000000,
-            Void = 5000000,
-        },
-        rejectSpecial = false,
-        rejectList = { Infernal = true, Spirit = true },
-    },
-}
+WEAPON_DB = {}
 
 local SPECIAL_TREES = {
     BlueFlame=true, Celestial=true, Crystal=true, Flame=true,
@@ -7142,12 +7086,7 @@ getWeaponData = function(tool)
     else
         toolName = tool.Name
     end
-    -- 先查 WEAPON_DB
-    local db = WEAPON_DB[toolName]
-    if db then
-        return db, toolName, isSword
-    end
-    -- 找不到就动态扫模块
+    -- 完全动态扫模块，不查 WEAPON_DB
     local dynDb = tryRequireAxeClass(toolName)
     if dynDb then
         return dynDb, toolName, isSword
