@@ -6971,7 +6971,7 @@ end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 WEAPON_DB = {
-    OlReliable = {
+    ["O|Reliable"] = {
         cooldown = 0.34554792881011964,
         height = 0.37510824203491211,
         faceVector = Vector3.new(0, 0, -1),
@@ -7102,22 +7102,13 @@ cutPart = function(event, section, height, tool, treeClass, cachedStats)
     if not hp then
         return
     end
-    -- Cobalt 确认：tool 在 nil 空间，用 getnilinstances 找名字是 Tool 且有 ToolName 的
-    local nilTool = nil
-    if getnilinstances then
-        for _, obj in ipairs(getnilinstances()) do
-            if obj.Name == "Tool" and obj:FindFirstChild("ToolName") then
-                nilTool = obj
-                break
-            end
-        end
-    end
-    local finalTool = nilTool or (speaker.Character and speaker.Character:FindFirstChildOfClass("Tool")) or tool
+    -- Cobalt 抓包确认：tool 必须是 Character 里装备中的 Tool，不能是 Backpack 里的
+    local equippedTool = speaker.Character and speaker.Character:FindFirstChildOfClass("Tool") or tool
     ReplicatedStorage.Interaction.RemoteProxy:FireServer(event, {
-        tool = finalTool,
+        tool = equippedTool,
         faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
         height = height or weaponData.height or 0.4,
-        sectionId = 1,
+        sectionId = 1,  -- Cobalt 抓包确认：固定 1，不用 WoodSection ID
         hitPoints = hp,
         cooldown = weaponData.cooldown,
         cuttingClass = weaponData.cuttingClass,
