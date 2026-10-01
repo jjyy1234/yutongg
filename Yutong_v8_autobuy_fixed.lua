@@ -7019,7 +7019,7 @@ local SPECIAL_TREES = {
 }
 
 
-local function getWeaponData(tool)
+getWeaponData = function(tool)
     if not tool then return nil end
     local toolName
     local isSword = false
@@ -7058,7 +7058,7 @@ resolveHitPoints = function(weaponData, treeClass)
 end
 
 -- [新增] 逐段并发砍树：并发 3 路，每段 0.1 秒间隔
-local function cutAllSections(sections, tool, treeClass, weaponData, cutEvent)
+cutAllSections = function(sections, tool, treeClass, weaponData, cutEvent)
     if not sections or #sections == 0 then return end
     local hp, reason = resolveHitPoints(weaponData, treeClass)
     if not hp then
