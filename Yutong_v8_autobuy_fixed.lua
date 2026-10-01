@@ -8186,7 +8186,7 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         notify("请先点「记忆锯木机」选择锯木机", "warn")
         return
     end
-    local sawTargetCF = lockedConveyorCF + Vector3.new(0, 0.23, 0)
+    local sawTargetCF = CFrame.new(lockedConveyorCF.Position + Vector3.new(0, 0.23, 0)) * (lockedConveyorCF - lockedConveyorCF.Position)
 
     local OldPos = speaker.Character.HumanoidRootPart.CFrame
     notify("请点击一棵已砍倒的原木", "info")
@@ -8231,10 +8231,47 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         speaker.Character.HumanoidRootPart.CFrame = CFrame.new(mid.CFrame.p + Vector3.new(2, 0, 0))
         -- 逐段并发砍，0.1 秒间隔，并发 3 路
         if weaponData then
-            cutAllSections(sections, data, treeClass, weaponData, cutEvent)
-            -- 等待分解完成（最多 60 秒）
+            -- 等待分解完成：用计数器等3个worker都跑完
+            local done = 0
+            local totalWorkers = 3
+            local origCutAllSections = cutAllSections
+            local function cutAndWait()
+                if not sections or #sections == 0 then done = totalWorkers; return end
+                local hp, reason = resolveHitPoints(weaponData, treeClass)
+                if not hp then
+                    notify("拒绝砍：" .. tostring(treeClass) .. "（武器无对应伤害）", "warn")
+                    done = totalWorkers; return
+                end
+                local proxy = ReplicatedStorage.Interaction.RemoteProxy
+                local n = #sections
+                local function worker(startIdx)
+                    local i = startIdx
+                    while i <= n do
+                        local sec = sections[i]
+                        if sec and sec.Parent then
+                            local secId = sec:FindFirstChild("ID") and sec.ID.Value or 1
+                            proxy:FireServer(cutEvent, {
+                                tool = data,
+                                faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
+                                height = weaponData.height or 0.4,
+                                sectionId = secId,
+                                hitPoints = hp,
+                                cooldown = weaponData.cooldown,
+                                cuttingClass = weaponData.cuttingClass,
+                            })
+                        end
+                        task.wait(0.1)
+                        i = i + 3
+                    end
+                    done = done + 1
+                end
+                task.spawn(worker, 1)
+                task.spawn(worker, 2)
+                task.spawn(worker, 3)
+            end
+            cutAndWait()
             local timeout = tick() + 60
-            repeat task.wait(0.5) until tick() > timeout or (not TreeToJointCut or not TreeToJointCut.Parent)
+            repeat task.wait(0.3) until done >= totalWorkers or tick() > timeout
         else
             -- fallback 原逻辑
             for round = 1, 40 do
