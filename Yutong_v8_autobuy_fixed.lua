@@ -8095,7 +8095,7 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
 
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
-    local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
+    local cutEvent = TreeToJointCut:FindFirstChild("CutEvent") or TreeToJointCut:FindFirstChild("CutEvent", true)
     -- debug: 打印武器名和树种
     do
         local tools = getTools()
@@ -8165,13 +8165,20 @@ sawmillBtn.MouseButton1Click:Connect(function()
         while model.Parent and model.Parent:IsA("Model") do
             model = model.Parent
         end
-        local conveyor = model:FindFirstChild("Conveyor", true)
-        if not conveyor then
+        local conveyorModel = model:FindFirstChild("Conveyor", true)
+        if not conveyorModel then
             notify("这不是锯木机", "warn")
             conn:Disconnect()
             return
         end
-        _G.YutongLockedConveyorCF = conveyor.CFrame
+        local conveyorPart = conveyorModel:IsA("BasePart") and conveyorModel
+            or conveyorModel:FindFirstChildWhichIsA("BasePart", true)
+        if not conveyorPart then
+            notify("Conveyor 找不到 BasePart", "warn")
+            conn:Disconnect()
+            return
+        end
+        _G.YutongLockedConveyorCF = conveyorPart.CFrame
         _G.YutongRememberedSawmill = model
         sawmillBtn.Text = "已锁定: " .. model.Name
         notify("已锁定锯木机: " .. tostring(model.Name) .. "\nConveyor: " .. conveyor:GetFullName(), "success")
@@ -8214,7 +8221,7 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
 
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
-    local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
+    local cutEvent = TreeToJointCut:FindFirstChild("CutEvent") or TreeToJointCut:FindFirstChild("CutEvent", true)
     -- debug: 打印武器名和树种
     do
         local tools = getTools()
