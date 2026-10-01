@@ -6640,6 +6640,8 @@ local tp
 local getPosition
 local getMouseTarget
 local getBestAxe
+local getWeaponData
+local cutAllSections
 local cutPart
 local bringTree
 local autofarm
