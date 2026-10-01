@@ -8516,6 +8516,50 @@ woodBtn("删除树/木板", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 8
     f.Parent = speaker.Backpack
 end)
 
+-- ===== 查看 Planter 树 =====
+woodBtn("查看 Planter 树", Color3.fromRGB(200, 230, 255), Color3.fromRGB(60, 120, 180)).MouseButton1Click:Connect(function()
+    local results = {}
+    local playerModels = workspace:FindFirstChild("PlayerModels")
+    if not playerModels then
+        notify("找不到 PlayerModels", "warn")
+        return
+    end
+
+    for _, playerModel in ipairs(playerModels:GetChildren()) do
+        local treeRegion = playerModel:FindFirstChild("TreeRegion")
+        if treeRegion then
+            local model = treeRegion:FindFirstChildOfClass("Model")
+            if model then
+                local treeClassVal = model:FindFirstChild("TreeClass")
+                local treeClass = treeClassVal and treeClassVal.Value or "Unknown"
+                local ownerVal = model:FindFirstChild("Owner")
+                local ownerName = ownerVal and ownerVal.Value and ownerVal.Value.Name or "?"
+
+                local sections = {}
+                for _, v in ipairs(model:GetChildren()) do
+                    if v.Name == "WoodSection" and v:FindFirstChild("ID") then
+                        table.insert(sections, v.ID.Value)
+                    end
+                end
+                table.sort(sections)
+
+                local idStr = #sections > 0 and table.concat(sections, ",") or "无"
+                table.insert(results, string.format("[%s] %s  段:%d  IDs:%s", ownerName, treeClass, #sections, idStr))
+            end
+        end
+    end
+
+    if #results == 0 then
+        notify("没有找到任何 Planter 树", "info")
+    else
+        local msg = table.concat(results, "
+")
+        print("[v8 Planter]
+" .. msg)
+        notify("找到 " .. #results .. " 棵 Planter 树，详见控制台", "info")
+    end
+end)
+
 -- ===== 带来树 Section =====
 woodLabel("── 带来树 ──")
 
