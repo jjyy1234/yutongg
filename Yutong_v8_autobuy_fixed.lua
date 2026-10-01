@@ -8104,26 +8104,26 @@ end
 local function resolveSawTargetCF()
     local part = _G.YutongLockedConveyorPart
     if part and part.Parent then
-        return CFrame.new(part.Position + Vector3.new(0, 0.35, 0)) * (part.CFrame - part.CFrame.Position)
+        return CFrame.new(part.Position + Vector3.new(0, 0.35, 0)) * part.CFrame.Rotation
     end
 
     local model = _G.YutongRememberedSawmill
     if model and model.Parent then
-        local conveyorModel = model:FindFirstChild("Conveyor", true)
+        local conveyorModel = model:FindFirstChild("Conveyor")
         if conveyorModel then
             local conveyorPart = conveyorModel:IsA("BasePart") and conveyorModel
                 or conveyorModel:FindFirstChildWhichIsA("BasePart", true)
             if conveyorPart then
                 _G.YutongLockedConveyorPart = conveyorPart
                 _G.YutongLockedConveyorCF = conveyorPart.CFrame
-                return CFrame.new(conveyorPart.Position + Vector3.new(0, 0.35, 0)) * (conveyorPart.CFrame - conveyorPart.CFrame.Position)
+                return CFrame.new(conveyorPart.Position + Vector3.new(0, 0.35, 0)) * conveyorPart.CFrame.Rotation
             end
         end
     end
 
     local cf = _G.YutongLockedConveyorCF
     if cf then
-        return CFrame.new(cf.Position + Vector3.new(0, 0.35, 0)) * (cf - cf.Position)
+        return CFrame.new(cf.Position + Vector3.new(0, 0.35, 0)) * cf.Rotation
     end
     return nil
 end
