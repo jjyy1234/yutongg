@@ -7056,14 +7056,14 @@ resolveHitPoints = function(weaponData, treeClass)
 end
 
 -- [新增] 逐段并发砍树：并发 3 路，每段 0.1 秒间隔
-local function cutAllSections(sections, tool, treeClass, weaponData)
+local function cutAllSections(sections, tool, treeClass, weaponData, cutEvent)
     if not sections or #sections == 0 then return end
     local hp, reason = resolveHitPoints(weaponData, treeClass)
     if not hp then
         notify("拒绝砍：" .. tostring(treeClass) .. "（武器无对应伤害）", "warn")
         return
     end
-    local cutEvent = ReplicatedStorage.Interaction.RemoteProxy
+    local proxy = ReplicatedStorage.Interaction.RemoteProxy
     local n = #sections
     -- 分成 3 组并发
     local function worker(startIdx)
@@ -7071,9 +7071,8 @@ local function cutAllSections(sections, tool, treeClass, weaponData)
         while i <= n do
             local sec = sections[i]
             if sec and sec.Parent then
-                local cf = sec:FindFirstChildWhichIsA("BasePart")
                 local secId = sec:FindFirstChild("ID") and sec.ID.Value or 1
-                cutEvent:FireServer(sec:FindFirstChild("CutEvent") or sec.Parent:FindFirstChild("CutEvent"), {
+                proxy:FireServer(cutEvent, {
                     tool = tool,
                     faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
                     height = weaponData.height or 0.4,
@@ -8219,7 +8218,7 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         speaker.Character.HumanoidRootPart.CFrame = CFrame.new(mid.CFrame.p + Vector3.new(2, 0, 0))
         -- 逐段并发砍，0.1 秒间隔，并发 3 路
         if weaponData then
-            cutAllSections(sections, data, treeClass, weaponData)
+            cutAllSections(sections, data, treeClass, weaponData, cutEvent)
             -- 等待分解完成（最多 60 秒）
             local timeout = tick() + 60
             repeat task.wait(0.5) until tick() > timeout or (not TreeToJointCut or not TreeToJointCut.Parent)
