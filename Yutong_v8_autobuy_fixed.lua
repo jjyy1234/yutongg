@@ -6652,7 +6652,6 @@ local lumbsmasher_legitpaint
 local shuaxinlb
 local WEAPON_DB
 local resolveHitPoints
-do
 -- ===== [移植自青脚本] 木头功能 开始 =====
 
 -- 木头功能状态表
