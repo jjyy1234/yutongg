@@ -6990,13 +6990,15 @@ end
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 WEAPON_DB = {
     ["Ol' Reliable"] = {
-        cooldown = 0.34554792881011964,
+        cooldown = 0.25629998683929445,
         height = 0.37510824203491211,
-        faceVector = Vector3.new(0, 0, -1),
+        faceVector = Vector3.new(-1, 0, 0),
         hitPoints = 800,
         cuttingClass = "Axe",
-        specialTrees = nil,
-        rejectSpecial = true,
+        specialTrees = {
+            Radioactive = 10000000,
+        },
+        rejectSpecial = false,
         rejectList = nil,
     },
     Doom = {
