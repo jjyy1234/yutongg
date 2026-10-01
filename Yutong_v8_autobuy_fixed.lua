@@ -665,8 +665,6 @@ local pages = {}
 for i = 1, TAB_COUNT do
 	local page = Instance.new("ScrollingFrame")
 	page.Name = "Page_" .. i
-	page.Parent = ContentContainer
-end
 	page.Size = UDim2.new(1, 0, 1, 0)
 	page.Position = UDim2.new(0, 0, 0, 0)
 	page.BackgroundTransparency = 1
@@ -678,6 +676,7 @@ end
 	page.CanvasSize = UDim2.new(0, 0, 0, 400)
 	page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 	page.BorderSizePixel = 0
+	page.Parent = ContentContainer
 	pages[i] = page
 end
 
