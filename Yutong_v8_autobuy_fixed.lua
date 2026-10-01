@@ -8181,7 +8181,7 @@ sawmillBtn.MouseButton1Click:Connect(function()
         _G.YutongLockedConveyorCF = conveyorPart.CFrame
         _G.YutongRememberedSawmill = model
         sawmillBtn.Text = "已锁定: " .. model.Name
-        notify("已锁定锯木机: " .. tostring(model.Name) .. "\nConveyor: " .. conveyor:GetFullName(), "success")
+        notify("已锁定锯木机: " .. tostring(model.Name) .. "\nConveyor: " .. conveyorPart:GetFullName(), "success")
         conn:Disconnect()
     end)
 end)
