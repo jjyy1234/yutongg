@@ -6945,11 +6945,6 @@ end
 getBestAxe = function(treeClass)
     -- 只支持 WEAPON_DB 里的武器，不走动态读
     local tools = getTools()
-    -- debug: 打印所有工具名
-    for _, t in ipairs(tools) do
-        local tn = t:FindFirstChild("ToolName")
-        print("[v8 weapon] tool=" .. t.Name .. " ToolName=" .. (tn and tn.Value or "nil"))
-    end
     -- 先找斧头（有 ToolName 的 Tool）
     for _, tool in ipairs(tools) do
         local tn = tool:FindFirstChild("ToolName")
@@ -7107,11 +7102,13 @@ cutPart = function(event, section, height, tool, treeClass, cachedStats)
     if not hp then
         return
     end
+    -- Cobalt 抓包确认：tool 必须是 Character 里装备中的 Tool，不能是 Backpack 里的
+    local equippedTool = speaker.Character and speaker.Character:FindFirstChildOfClass("Tool") or tool
     ReplicatedStorage.Interaction.RemoteProxy:FireServer(event, {
-        tool = tool,
+        tool = equippedTool,
         faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
         height = height or weaponData.height or 0.4,
-        sectionId = section or 1,
+        sectionId = 1,  -- Cobalt 抓包确认：固定 1，不用 WoodSection ID
         hitPoints = hp,
         cooldown = weaponData.cooldown,
         cuttingClass = weaponData.cuttingClass,
@@ -8196,6 +8193,14 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
         return
     end
 
+    -- 装备斧头到 Character（Cobalt 确认 tool 必须是 Character.Tool）
+    pcall(function()
+        if speaker.Backpack:FindFirstChild(data.Name) then
+            speaker.Character.Humanoid:EquipTool(data)
+            task.wait(0.1)
+        end
+    end)
+
     local function getSections()
         local s = {}
         if not TreeToJointCut or not TreeToJointCut.Parent then return s end
@@ -8295,6 +8300,14 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
+
+    -- 装备斧头到 Character
+    pcall(function()
+        if speaker.Backpack:FindFirstChild(data.Name) then
+            speaker.Character.Humanoid:EquipTool(data)
+            task.wait(0.1)
+        end
+    end)
 
     local originalLog = TreeToJointCut
 
