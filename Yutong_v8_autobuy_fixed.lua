@@ -6929,20 +6929,12 @@ end
 
 local function getTools()
     local tools = {}
-    -- Backpack
     table_foreach(speaker.Backpack:GetChildren(), function(_, v)
+        -- 只要有 ToolName（斧头标志），排除 PaintTool/BlueprintTool 等非斧头
         if v:FindFirstChild("ToolName") then
             tools[#tools + 1] = v
         end
     end)
-    -- Character（装备中的斧头不在 Backpack 里）
-    if speaker.Character then
-        for _, v in ipairs(speaker.Character:GetChildren()) do
-            if v:FindFirstChild("ToolName") then
-                tools[#tools + 1] = v
-            end
-        end
-    end
     return tools
 end
 
@@ -6951,27 +6943,45 @@ local getTool = function()
 end
 
 getBestAxe = function(treeClass)
-    -- 只支持 WEAPON_DB 里的武器，不走动态读
-    local tools = getTools()
-    -- 先找斧头（有 ToolName 的 Tool）
-    for _, tool in ipairs(tools) do
-        local tn = tool:FindFirstChild("ToolName")
-        if tn and WEAPON_DB[tn.Value] then
-            local hp, reason = resolveHitPoints(WEAPON_DB[tn.Value], treeClass)
-            if hp then
-                return true, tool
+    -- 扫 Backpack + Character，有 ToolName 子项就当斧头用
+    local function scanContainer(container)
+        if not container then return nil end
+        for _, v in ipairs(container:GetChildren()) do
+            if v:FindFirstChild("ToolName") then
+                return v
             end
         end
+        -- 兜底：名字含 axe/reliable/doom/fallen（不区分大小写）
+        for _, v in ipairs(container:GetChildren()) do
+            local n = v.Name:lower()
+            if n:find("axe") or n:find("reliable") or n:find("doom") or n:find("fallen") then
+                return v
+            end
+        end
+        return nil
     end
-    -- 再找剑（有 ItemName 的 Model）
+
+    local tool = scanContainer(speaker.Backpack) or scanContainer(speaker.Character)
+    if tool then
+        -- 优先查 WEAPON_DB 拿精确数据
+        local tn = tool:FindFirstChild("ToolName")
+        local key = tn and tn.Value or tool.Name
+        local db = WEAPON_DB[key]
+        if db then
+            local hp, reason = resolveHitPoints(db, treeClass)
+            if hp then return true, tool end
+        end
+        -- 没有 WEAPON_DB 数据也返回工具，让 getWeaponData 动态读 AxeClassDamageOverride
+        return true, tool
+    end
+
+    -- 再找剑
     local sword = getBestSword()
     if sword then
         local itemName = sword:FindFirstChild("ItemName")
         if itemName and WEAPON_DB[itemName.Value] then
             local hp, reason = resolveHitPoints(WEAPON_DB[itemName.Value], treeClass)
-            if hp then
-                return true, sword
-            end
+            if hp then return true, sword end
         end
     end
     return false, nil
@@ -6979,7 +6989,7 @@ end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 WEAPON_DB = {
-    ["O|Reliable"] = {
+    OlReliable = {
         cooldown = 0.34554792881011964,
         height = 0.37510824203491211,
         faceVector = Vector3.new(0, 0, -1),
