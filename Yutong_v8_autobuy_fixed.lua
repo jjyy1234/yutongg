@@ -42,6 +42,7 @@ pcall(function()
 	})
 end)
 
+do
 local function getSwordFromWorld(name)
     local lp2 = Players.LocalPlayer
     local bp = lp2:FindFirstChild("Backpack")
@@ -58,6 +59,7 @@ local function getSwordFromWorld(name)
         end
     end
     return nil
+end
 end
 
 local function getBestSword()
@@ -154,6 +156,8 @@ main.IgnoreGuiInset = true
 
 
 -- ===================== 右下角通知弹窗 =====================
+local notify
+do
 local notifContainer = Instance.new("Frame")
 notifContainer.Name = "NotifyContainer"
 notifContainer.Parent = main
@@ -172,7 +176,7 @@ notifLayout.Padding = UDim.new(0, 6)
 
 local notifSeq = 0
 
-local function notify(text, kind)
+notify = function(text, kind)
 	kind = kind or "info"
 	notifSeq = notifSeq + 1
 	local order = notifSeq
@@ -254,6 +258,7 @@ local function notify(text, kind)
 end
 
 _G.YutongNotify = notify
+end
 
 -- ===== 全店 NPC ID 探测（启动时）=====
 local npcIdCache = {} -- [storeName] = id
@@ -333,6 +338,7 @@ local function getStoreBaseIds(storeName)
 	return list
 end
 
+do
 local function candidateIdsForStore(storeName)
 	local ids = {}
 	local seen = {}
@@ -350,6 +356,7 @@ local function candidateIdsForStore(storeName)
 		end
 	end
 	return ids
+end
 end
 
 
@@ -371,6 +378,7 @@ local function deepFindId(val, depth)
 	return nil
 end
 
+do
 local function listenDialogTraffic(onId)
 	local conns = {}
 	pcall(function()
@@ -415,9 +423,12 @@ local function listenDialogTraffic(onId)
 	end)
 	return conns
 end
+end
 
+do
 local function probeAllStoreNpcIds()
 	-- 已禁用
+end
 end
 
 -- 被动监听 PromptChat，靠近 NPC 时自动更新缓存，买过一次后锁定不再覆盖
@@ -483,6 +494,7 @@ Frame.BorderSizePixel = 0
 Frame.ClipsDescendants = true
 Frame.Active = true
 
+do
 local frameCorner = Instance.new("UICorner")
 frameCorner.CornerRadius = UDim.new(0, px(14))
 frameCorner.Parent = Frame
@@ -492,6 +504,7 @@ frameStroke.Parent = Frame
 frameStroke.Color = Color3.fromRGB(225, 198, 215)
 frameStroke.Thickness = math.max(1, S * 1.2)
 frameStroke.Transparency = 0.15
+end
 
 local menuButton = Instance.new("TextButton")
 menuButton.Name = "MenuButton"
@@ -546,6 +559,7 @@ TextLabel.Font = Enum.Font.Cartoon
 TextLabel.TextSize = px(18)
 TextLabel.TextXAlignment = Enum.TextXAlignment.Left
 
+do
 local SubTitle = Instance.new("TextLabel")
 SubTitle.Name = "SubTitle"
 SubTitle.Parent = Frame
@@ -557,6 +571,7 @@ SubTitle.TextColor3 = Color3.fromRGB(173, 144, 163)
 SubTitle.Font = Enum.Font.GothamMedium
 SubTitle.TextSize = px(7)
 SubTitle.TextXAlignment = Enum.TextXAlignment.Left
+end
 
 
 local mini = Instance.new("TextButton")
@@ -589,6 +604,10 @@ closebutton.ZIndex = 10
 closebutton.AutoButtonColor = false
 Instance.new("UICorner", closebutton).CornerRadius = UDim.new(1, 0)
 
+local tabButtons = {}
+local selectedTabIndex = 1
+local selectTab
+do
 local TAB_NAMES = {"首页", "飞行", "传送", "购买", "木头", "其他", "调试"}
 local TAB_COUNT = #TAB_NAMES
 local TAB_WIDTH = px(40)
@@ -603,9 +622,6 @@ TabBar.Position = UDim2.new(0, px(4), 0, px(42))
 TabBar.Size = UDim2.new(0, TAB_WIDTH, 0, TAB_COUNT * TAB_HEIGHT + (TAB_COUNT-1) * TAB_GAP)
 TabBar.ZIndex = 5
 
-local tabButtons = {}
-local selectedTabIndex = 1
-local selectTab
 
 for i = 1, TAB_COUNT do
 	local tabBtn = Instance.new("TextButton")
@@ -628,7 +644,9 @@ for i = 1, TAB_COUNT do
 		selectTab(i)
 	end)
 end
+end
 
+do
 local CONTENT_LEFT = px(48)
 local CONTENT_TOP = px(42)
 local CONTENT_WIDTH = FRAME_W - CONTENT_LEFT - px(8)
@@ -648,6 +666,7 @@ for i = 1, TAB_COUNT do
 	local page = Instance.new("ScrollingFrame")
 	page.Name = "Page_" .. i
 	page.Parent = ContentContainer
+end
 	page.Size = UDim2.new(1, 0, 1, 0)
 	page.Position = UDim2.new(0, 0, 0, 0)
 	page.BackgroundTransparency = 1
@@ -7633,7 +7652,6 @@ shuaxinlb = function(zji)
         end
     end
 end
-end
 do
 shuaxinlb(true)
 
@@ -8596,10 +8614,8 @@ woodBtn("查看 Planter 树", Color3.fromRGB(200, 230, 255), Color3.fromRGB(60, 
     if #results == 0 then
         notify("没有找到任何 Planter 树", "info")
     else
-        local msg = table.concat(results, "
-")
-        print("[v8 Planter]
-" .. msg)
+        local msg = table.concat(results, "\n")
+        print("[v8 Planter]\n" .. msg)
         notify("找到 " .. #results .. " 棵 Planter 树，详见控制台", "info")
     end
 end)
