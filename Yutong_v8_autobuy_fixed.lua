@@ -8149,9 +8149,10 @@ sawmillBtn.MouseButton1Click:Connect(function()
             model = model.Parent
         end
 
-        local conveyorModel = model:FindFirstChild("Conveyor", true)
+        -- 直接找一级子项 Conveyor，不递归，避免误匹配
+        local conveyorModel = model:FindFirstChild("Conveyor")
         if not conveyorModel then
-            notify("这不是锯木机（找不到 Conveyor）", "warn")
+            notify("这不是锯木机（没有 Conveyor 子项）", "warn")
             conn:Disconnect()
             return
         end
@@ -8331,6 +8332,15 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
 
     local originalLog = TreeToJointCut
 
+    -- 分解前先记录 LogModels 里已有的木头，分解后只传新增的
+    local existingLogs = {}
+    local logModelsSnap = workspace:FindFirstChild("LogModels")
+    if logModelsSnap then
+        for _, obj in ipairs(logModelsSnap:GetChildren()) do
+            existingLogs[obj] = true
+        end
+    end
+
     local function getSections()
         local s = {}
         if not originalLog or not originalLog.Parent then return s end
@@ -8393,23 +8403,19 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
     local toMove = {}
     local seen = {}
 
-    local function tryAdd(obj)
-        if not obj or seen[obj] then return end
-        if obj == originalLog then return end
-        local ow = obj:FindFirstChild("Owner")
-        if not (ow and ow.Value == speaker) then return end
-        local hasWood = obj:FindFirstChild("WoodSection") or obj.Name == "WoodSection"
-        if hasWood then
-            seen[obj] = true
-            table.insert(toMove, obj)
-        end
-    end
-
+    -- 只传分解后新出现的木头（不在分解前快照里，也不是原木本身）
     local logModels = workspace:FindFirstChild("LogModels")
     if logModels then
         for _, obj in ipairs(logModels:GetChildren()) do
-            if obj:IsA("Model") then
-                tryAdd(obj)
+            if obj:IsA("Model") and not seen[obj] and not existingLogs[obj] and obj ~= originalLog then
+                local ow = obj:FindFirstChild("Owner")
+                if ow and ow.Value == speaker then
+                    local hasWood = obj:FindFirstChild("WoodSection")
+                    if hasWood then
+                        seen[obj] = true
+                        table.insert(toMove, obj)
+                    end
+                end
             end
         end
     end
