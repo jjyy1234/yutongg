@@ -1,3 +1,4 @@
+local _ok, _err = xpcall(function()
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
@@ -10011,3 +10012,9 @@ end
 
 selectTab(1)
 print("[Yutong] tabs=", TAB_COUNT, "pages=", #pages)
+
+end, function(err)
+    print("[v8 ERROR]", err)
+    print(debug.traceback())
+end)
+if not _ok then print("[v8 FAILED]", _err) end
