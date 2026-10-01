@@ -7048,6 +7048,160 @@ getBestAxe = function(treeClass)
     return true, tool or toolStats[1].tool
 end
 
+-- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
+local WEAPON_DB = {
+    OlReliable = {
+        cooldown = 0.34554792881011964,
+        height = 0.37510824203491211,
+        faceVector = Vector3.new(0, 0, -1),
+        hitPoints = 800,
+        cuttingClass = "Axe",
+        specialTrees = nil,
+        rejectSpecial = true,
+        rejectList = nil,
+    },
+    Doom = {
+        cooldown = 0.2532,
+        height = 0.4,
+        faceVector = Vector3.new(0, 0, -1),
+        hitPoints = 30000,
+        cuttingClass = "Axe",
+        specialTrees = {
+            BlueFlame = 3500000, Celestial = 10000000, Crystal = 16000000,
+            Flame = 10000000, Ice = 8000000, LoneCave = 10000000,
+            Magma = 5000000, Radioactive = 10000000, Void = 5000000,
+        },
+        rejectSpecial = false,
+        rejectList = { Infernal = true, Spirit = true, Shine = true },
+    },
+    Fallen = {
+        cooldown = 0.2919,
+        height = 0.4,
+        faceVector = Vector3.new(0, 0, -1),
+        hitPoints = 31000,
+        cuttingClass = "Axe",
+        specialTrees = {
+            BlueFlame = 5500000, Celestial = 10000000, Crystal = 23000000,
+            Flame = 15000000, Ice = 8000000, LoneCave = 10000000,
+            Magma = 15000000, Radioactive = 10000000, Shine = 80000000,
+            Void = 5000000,
+        },
+        rejectSpecial = false,
+        rejectList = { Infernal = true, Spirit = true },
+    },
+}
+
+local SPECIAL_TREES = {
+    BlueFlame=true, Celestial=true, Crystal=true, Flame=true,
+    Ice=true, Infernal=true, LoneCave=true, Magma=true,
+    Radioactive=true, Shine=true, Spirit=true, Void=true,
+}
+
+-- 剑的 cuttingClass：文件中未找到硬编码值，默认 "Sword"
+-- 如果服务器拒绝请改为 "Axe" 或抓包确认
+local SWORD_CUTTING_CLASS = "Sword"
+
+local function getWeaponData(tool)
+    if not tool then return nil end
+    local toolName
+    local isSword = false
+    local itemName = tool:FindFirstChild("ItemName")
+    if itemName then
+        toolName = itemName.Value
+        isSword = true
+    elseif tool:FindFirstChild("ToolName") then
+        toolName = tool.ToolName.Value
+    else
+        toolName = tool.Name
+    end
+    local db = WEAPON_DB[toolName]
+    if db then
+        return db, toolName, isSword
+    end
+    -- 剑或未知斧头走动态 decompile
+    local stats = getToolStats(tool)
+    if stats then
+        local specialHP = nil
+        if stats.SpecialTrees then
+            specialHP = {}
+            for treeName, fields in pairs(stats.SpecialTrees) do
+                if type(fields) == "table" and fields.Damage then
+                    specialHP[treeName] = fields.Damage
+                elseif type(fields) == "number" then
+                    specialHP[treeName] = fields
+                end
+            end
+            if not next(specialHP) then specialHP = nil end
+        end
+        return {
+            cooldown = stats.SwingCooldown,
+            height = 0.4,
+            faceVector = Vector3.new(0, 0, -1),
+            hitPoints = stats.Damage,
+            cuttingClass = isSword and SWORD_CUTTING_CLASS or "Axe",
+            specialTrees = specialHP,
+            rejectSpecial = false,
+            rejectList = nil,
+        }, toolName, isSword
+    end
+    return nil, toolName, isSword
+end
+
+local function resolveHitPoints(weaponData, treeClass)
+    if not weaponData then return nil end
+    if SPECIAL_TREES[treeClass] then
+        if weaponData.rejectList and weaponData.rejectList[treeClass] then
+            return nil, "reject"
+        end
+        if weaponData.rejectSpecial then
+            return nil, "reject"
+        end
+        if weaponData.specialTrees and weaponData.specialTrees[treeClass] then
+            return weaponData.specialTrees[treeClass]
+        end
+        -- 特殊树但没有对应数据 → 拒绝
+        return nil, "reject"
+    end
+    return weaponData.hitPoints
+end
+
+-- [新增] 逐段并发砍树：并发 3 路，每段 0.1 秒间隔
+local function cutAllSections(sections, tool, treeClass, weaponData)
+    if not sections or #sections == 0 then return end
+    local hp, reason = resolveHitPoints(weaponData, treeClass)
+    if not hp then
+        notify("拒绝砍：" .. tostring(treeClass) .. "（武器无对应伤害）", "warn")
+        return
+    end
+    local cutEvent = ReplicatedStorage.Interaction.RemoteProxy
+    local n = #sections
+    -- 分成 3 组并发
+    local function worker(startIdx)
+        local i = startIdx
+        while i <= n do
+            local sec = sections[i]
+            if sec and sec.Parent then
+                local cf = sec:FindFirstChildWhichIsA("BasePart")
+                local secId = sec:FindFirstChild("ID") and sec.ID.Value or 1
+                cutEvent:FireServer(sec:FindFirstChild("CutEvent") or sec.Parent:FindFirstChild("CutEvent"), {
+                    tool = tool,
+                    faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
+                    height = weaponData.height or 0.4,
+                    sectionId = secId,
+                    hitPoints = hp,
+                    cooldown = weaponData.cooldown,
+                    cuttingClass = weaponData.cuttingClass,
+                })
+            end
+            task.wait(0.1)
+            i = i + 3
+        end
+    end
+    task.spawn(worker, 1)
+    task.spawn(worker, 2)
+    task.spawn(worker, 3)
+end
+
 cutPart = function(event, section, height, tool, treeClass, cachedStats)
     if not tool then
         notify("No axe equipped", "warn")
@@ -8062,6 +8216,7 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
+    local weaponData = getWeaponData(data)
 
     -- 站到树附近一次，然后一次性对全部分枝连砍
     local mid = sections[1]
@@ -8091,36 +8246,50 @@ if not _G.YutongRememberedSawmill then
     _G.YutongRememberedSawmill = nil
 end
 
-woodBtn("记忆锯木机", Color3.fromRGB(255, 230, 180), Color3.fromRGB(140, 100, 40)).MouseButton1Click:Connect(function()
+if not _G.YutongLockedConveyorCF then
+    _G.YutongLockedConveyorCF = nil
+end
+
+local sawmillBtn = woodBtn("记忆锯木机", Color3.fromRGB(255, 230, 180), Color3.fromRGB(140, 100, 40))
+sawmillBtn.MouseButton1Click:Connect(function()
     notify("请点击一台锯木机", "info")
     local conn
     conn = Mouse.Button1Up:Connect(function()
         local t = Mouse.Target
         if not t then return end
-        local saw = nil
-        if t.Name:find("Sawmill") then
-            saw = t
-        elseif t.Parent and t.Parent.Name:find("Sawmill") then
-            saw = t.Parent
-        elseif t.Parent and t.Parent:FindFirstChild("BlockageAlert") then
-            saw = t.Parent
-        elseif t.Parent and t.Parent.Parent and t.Parent.Parent.Name:find("Sawmill") then
-            saw = t.Parent.Parent
+        local model = t
+        while model and not model:IsA("Model") do
+            model = model.Parent
         end
-        if saw then
-            _G.YutongRememberedSawmill = saw
-            notify("锯木机已记忆: " .. tostring(saw.Name), "success")
+        if not model then
+            notify("这不是锯木机", "warn")
             conn:Disconnect()
+            return
         end
+        while model.Parent and model.Parent:IsA("Model") do
+            model = model.Parent
+        end
+        local conveyor = model:FindFirstChild("Conveyor", true)
+        if not conveyor then
+            notify("这不是锯木机", "warn")
+            conn:Disconnect()
+            return
+        end
+        _G.YutongLockedConveyorCF = conveyor.CFrame
+        _G.YutongRememberedSawmill = model
+        sawmillBtn.Text = "已锁定: " .. model.Name
+        notify("已锁定锯木机: " .. tostring(model.Name) .. "\nConveyor: " .. conveyor:GetFullName(), "success")
+        conn:Disconnect()
     end)
 end)
 
 woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125, 94)).MouseButton1Click:Connect(function()
-    local saw = _G.YutongRememberedSawmill
-    if not saw or not saw.Parent then
+    local lockedConveyorCF = _G.YutongLockedConveyorCF
+    if not lockedConveyorCF then
         notify("请先点「记忆锯木机」选择锯木机", "warn")
         return
     end
+    local sawTargetCF = lockedConveyorCF + Vector3.new(0, 0.23, 0)
 
     local OldPos = speaker.Character.HumanoidRootPart.CFrame
     notify("请点击一棵已砍倒的原木", "info")
@@ -8156,17 +8325,27 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
+    local weaponData = getWeaponData(data)
 
     if #sections > 0 then
         local mid = sections[1]
         speaker.Character.HumanoidRootPart.CFrame = CFrame.new(mid.CFrame.p + Vector3.new(2, 0, 0))
-        for round = 1, 40 do
-            for _, v in ipairs(sections) do
-                if v.Parent then
-                    pcall(function()
-                        cutPart(cutEvent, v.ID.Value, 0.2, data, treeClass)
-                    end)
-                    task.wait(0.005)
+        -- 逐段并发砍，0.1 秒间隔，并发 3 路
+        if weaponData then
+            cutAllSections(sections, data, treeClass, weaponData)
+            -- 等待分解完成（最多 60 秒）
+            local timeout = tick() + 60
+            repeat task.wait(0.5) until tick() > timeout or (not TreeToJointCut or not TreeToJointCut.Parent)
+        else
+            -- fallback 原逻辑
+            for round = 1, 40 do
+                for _, v in ipairs(sections) do
+                    if v.Parent then
+                        pcall(function()
+                            cutPart(cutEvent, v.ID.Value, 0.2, data, treeClass)
+                        end)
+                        task.wait(0.005)
+                    end
                 end
             end
         end
@@ -8177,44 +8356,28 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
 
     task.wait(0.25)
 
-    -- 锯木机目标位置
-    local sawPos
-    pcall(function()
-        if saw:FindFirstChild("Particles") then
-            sawPos = (saw.Particles.CFrame + Vector3.new(0.7, 0, 0)).Position
-        else
-            local p = saw:FindFirstChildWhichIsA("BasePart", true)
-            if p then sawPos = p.Position + Vector3.new(0, 1, 0) end
-        end
-    end)
-    if not sawPos then
-        notify("无法取得锯木机坐标", "error")
-        speaker.Character.HumanoidRootPart.CFrame = OldPos
-        return
-    end
-
-    -- 把该原木模型下仍存在的 WoodSection 都拖到锯木机
+    -- 只传已分解完成的独立木头（Parent 是 workspace 或 LogModels，不再是原木 Model 的子项）
     local toMove = {}
-    if TreeToJointCut and TreeToJointCut.Parent then
-        for _, v in ipairs(TreeToJointCut:GetChildren()) do
-            if v.Name == "WoodSection" then
-                table.insert(toMove, v)
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj.Name == "WoodSection" then
+            local ow = obj:FindFirstChild("Owner")
+            if ow and ow.Value == speaker then
+                table.insert(toMove, obj)
             end
         end
     end
-    -- 也扫自己刚分解出来的附近 Loose 原木分枝
-    pcall(function()
-        for _, log in ipairs(Workspace.LogModels:GetChildren()) do
-            local ow = log:FindFirstChild("Owner")
-            if ow and ow.Value == speaker then
-                for _, v in ipairs(log:GetChildren()) do
-                    if v.Name == "WoodSection" then
-                        table.insert(toMove, v)
-                    end
+    -- 也扫 LogModels 顶层
+    local logModels = workspace:FindFirstChild("LogModels")
+    if logModels then
+        for _, obj in ipairs(logModels:GetChildren()) do
+            if obj:IsA("Model") and obj.Name == "WoodSection" then
+                local ow = obj:FindFirstChild("Owner")
+                if ow and ow.Value == speaker then
+                    table.insert(toMove, obj)
                 end
             end
         end
-    end)
+    end
 
     local dragRemote = ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
     local moved = 0
@@ -8223,17 +8386,7 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
             local model = sec.Parent
             pcall(function()
                 if type(teleportOneItem) == "function" then
-                    -- 用 sawmill 的 CFrame（带朝向），让木头对齐锯木机方向
-                    local sawCF
-                    pcall(function()
-                        if saw:FindFirstChild("Particles") then
-                            sawCF = saw.Particles.CFrame + Vector3.new(0.7, 0, 0)
-                        else
-                            local p = saw:FindFirstChildWhichIsA("BasePart", true)
-                            if p then sawCF = p.CFrame + Vector3.new(0, 1, 0) end
-                        end
-                    end)
-                    teleportOneItem(model, sawCF or sawPos)
+                    teleportOneItem(model, sawTargetCF)
                 else
                     local h = speaker.Character.HumanoidRootPart
                     h.CFrame = CFrame.new(sec.CFrame.p + Vector3.new(2, 2, 0))
@@ -8243,7 +8396,7 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
                             dragRemote:FireServer("Refresh", model, 5)
                         end
                         if model:IsA("Model") then
-                            model:PivotTo(CFrame.new(sawPos))
+                            model:PivotTo(sawTargetCF)
                         end
                         if dragRemote then
                             dragRemote:FireServer("End", model, 5)
