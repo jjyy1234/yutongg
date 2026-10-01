@@ -40,9 +40,6 @@ pcall(function()
 	})
 end)
 
--- ===== 剑伤害表 =====
-
-
 local function getSwordFromWorld(name)
     local lp2 = Players.LocalPlayer
     local bp = lp2:FindFirstChild("Backpack")
@@ -6651,6 +6648,8 @@ local sellwood
 local PlankToBlueprint
 local lumbsmasher_legitpaint
 local shuaxinlb
+local WEAPON_DB
+local resolveHitPoints
 do
 -- ===== [移植自青脚本] 木头功能 开始 =====
 
@@ -6877,20 +6876,6 @@ function getHitPointsTbl()
     }
 end
 
-local function get_axe_damage(tool, tree)
-    local ok, result = pcall(function()
-        local axe_class = require(ReplicatedStorage.AxeClasses['AxeClass_' .. tool.ToolName.Value])
-        local axe_table = axe_class.new()
-        if axe_table["SpecialTrees"] and axe_table["SpecialTrees"][tree] then
-            return axe_table["SpecialTrees"][tree].Damage
-        else
-            return axe_table.Damage
-        end
-    end)
-    if ok and result then return result end
-    return 1.5
-end
-
 function get_axe_cooldown(tool)
     local success, return_value = pcall(function()
         local axe_class = require(ReplicatedStorage.AxeClasses['AxeClass_' .. tool.ToolName.Value])
@@ -6925,16 +6910,19 @@ function getBestSawmill()
 end
 
 function barkgetBestAxe2()
-    local pc = speaker.Character
-    local axe_damage, best_axe
-    for i, v in pairs(getAxeList()) do
-        if v.name == "Tool" then
-            local damage = get_axe_damage(v, "Generic")
-            if best_axe == nil then best_axe = v; axe_damage = damage
-            elseif get_axe_damage(best_axe, "Generic") < damage then best_axe = v; axe_damage = damage end
+    local best, bestHP
+    for _, v in ipairs(getAxeList()) do
+        if v.Name == "Tool" then
+            local tn = v:FindFirstChild("ToolName")
+            if tn and WEAPON_DB[tn.Value] then
+                local hp = WEAPON_DB[tn.Value].hitPoints
+                if not best or hp > bestHP then
+                    best = v; bestHP = hp
+                end
+            end
         end
     end
-    return best_axe
+    return best
 end
 
 local function getTools()
@@ -6948,108 +6936,39 @@ local function getTools()
     return tools
 end
 
-local function getToolStats(toolObj)
-    local toolName
-    if typeof(toolObj) == "string" then
-        toolName = toolObj
-    elseif typeof(toolObj) == "Instance" then
-        -- 剑 Model：用 ItemName.Value
-        local itemName = toolObj:FindFirstChild("ItemName")
-        if itemName then
-            toolName = itemName.Value
-        -- 斧头 Tool：用 ToolName.Value
-        elseif toolObj:FindFirstChild("ToolName") then
-            toolName = toolObj.ToolName.Value
-        else
-            toolName = toolObj.Name
-        end
-    end
-    -- 去 LoadedAssets 动态匹配 AxeClass（斧头和剑都走这条路），decompile 读源码解析参数
-    if toolName then
-        local la = ReplicatedStorage:FindFirstChild("LoadedAssets")
-        if la then
-            -- normalizeName：小写、去空格/下划线/连字符、去 axeclass 后缀
-            local function normalizeName(s)
-                if type(s) ~= "string" then return "" end
-                return s:lower():gsub("[%s_%-%c]", ""):gsub("axeclass$", "")
-            end
-            local target = normalizeName(toolName)
-            local classModule = nil
-            -- 精确匹配
-            for _, obj in ipairs(la:GetDescendants()) do
-                if obj:IsA("ModuleScript") and normalizeName(obj.Name) == target then
-                    classModule = obj; break
-                end
-            end
-            -- 包含匹配
-            if not classModule then
-                for _, obj in ipairs(la:GetDescendants()) do
-                    if obj:IsA("ModuleScript") then
-                        local n = normalizeName(obj.Name)
-                        if n:find(target, 1, true) or target:find(n, 1, true) then
-                            classModule = obj; break
-                        end
-                    end
-                end
-            end
-            if classModule then
-                local ok, src = pcall(function() return decompile(classModule) end)
-                if ok and type(src) == "string" and #src > 0 then
-                    -- parseSource：匹配 vN.Field = value 格式（反编译变量名随机）
-                    local dmg = src:match("%w+%.Damage%s*=%s*([%d%.]+)")
-                    local cd  = src:match("%w+%.SwingCooldown%s*=%s*([%d%.]+)")
-                    local rng = src:match("%w+%.Range%s*=%s*([%d%.]+)")
-                    -- SpecialTrees：vN.SpecialTrees.TreeName.Field = value
-                    local specialTrees = {}
-                    for treeName in src:gmatch("%w+%.SpecialTrees%.(%w+)%s*=%s*{}") do
-                        if not specialTrees[treeName] then specialTrees[treeName] = {} end
-                    end
-                    for treeName, field, value in src:gmatch("%w+%.SpecialTrees%.(%w+)%.(%w+)%s*=%s*([%d%.]+)") do
-                        if not specialTrees[treeName] then specialTrees[treeName] = {} end
-                        specialTrees[treeName][field] = tonumber(value)
-                    end
-                    return {
-                        Damage       = tonumber(dmg) or 1.5,
-                        SwingCooldown = tonumber(cd) or 0.29,
-                        Range        = tonumber(rng) or nil,
-                        SpecialTrees = next(specialTrees) and specialTrees or nil
-                    }
-                end
-            end
-        end
-    end
-    return { Damage = 1.5, SwingCooldown = 0.29, SpecialTrees = nil }
-end
-
 local getTool = function()
     return speaker.Character:FindFirstChild("Tool") or speaker.Backpack:FindFirstChild("Tool")
 end
 
 getBestAxe = function(treeClass)
+    -- 只支持 WEAPON_DB 里的武器，不走动态读
     local tools = getTools()
-    if #tools == 0 then
-        -- 背包没斧头，fallback 用剑
-        local sword, swordName = getBestSword()
-        if not sword then return notify("你需要斧头或剑", "warn") end
-        return true, sword
-    end
-    local toolStats = {}
-    local tool
-    for _, v in next, tools do
-        if treeClass == "LoneCave" and v.ToolName.Value == "EndTimesAxe" then tool = v; break end
-        local axeStats = getToolStats(v)
-        if axeStats.SpecialTrees and axeStats.SpecialTrees[treeClass] then
-            for i, v in next, axeStats.SpecialTrees[treeClass] do axeStats[i] = v end
+    -- 先找斧头（有 ToolName 的 Tool）
+    for _, tool in ipairs(tools) do
+        local tn = tool:FindFirstChild("ToolName")
+        if tn and WEAPON_DB[tn.Value] then
+            local hp, reason = resolveHitPoints(WEAPON_DB[tn.Value], treeClass)
+            if hp then
+                return true, tool
+            end
         end
-        table.insert(toolStats, { tool = v, damage = axeStats.Damage })
     end
-    if not tool and treeClass == "LoneCave" then return notify("你需要末日斧头", "warn") end
-    table.sort(toolStats, function(a, b) return a.damage > b.damage end)
-    return true, tool or toolStats[1].tool
+    -- 再找剑（有 ItemName 的 Model）
+    local sword = getBestSword()
+    if sword then
+        local itemName = sword:FindFirstChild("ItemName")
+        if itemName and WEAPON_DB[itemName.Value] then
+            local hp, reason = resolveHitPoints(WEAPON_DB[itemName.Value], treeClass)
+            if hp then
+                return true, sword
+            end
+        end
+    end
+    return false, nil
 end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
-local WEAPON_DB = {
+WEAPON_DB = {
     OlReliable = {
         cooldown = 0.34554792881011964,
         height = 0.37510824203491211,
@@ -7097,9 +7016,6 @@ local SPECIAL_TREES = {
     Radioactive=true, Shine=true, Spirit=true, Void=true,
 }
 
--- 剑的 cuttingClass：文件中未找到硬编码值，默认 "Sword"
--- 如果服务器拒绝请改为 "Axe" 或抓包确认
-local SWORD_CUTTING_CLASS = "Sword"
 
 local function getWeaponData(tool)
     if not tool then return nil end
@@ -7118,36 +7034,10 @@ local function getWeaponData(tool)
     if db then
         return db, toolName, isSword
     end
-    -- 剑或未知斧头走动态 decompile
-    local stats = getToolStats(tool)
-    if stats then
-        local specialHP = nil
-        if stats.SpecialTrees then
-            specialHP = {}
-            for treeName, fields in pairs(stats.SpecialTrees) do
-                if type(fields) == "table" and fields.Damage then
-                    specialHP[treeName] = fields.Damage
-                elseif type(fields) == "number" then
-                    specialHP[treeName] = fields
-                end
-            end
-            if not next(specialHP) then specialHP = nil end
-        end
-        return {
-            cooldown = stats.SwingCooldown,
-            height = 0.4,
-            faceVector = Vector3.new(0, 0, -1),
-            hitPoints = stats.Damage,
-            cuttingClass = isSword and SWORD_CUTTING_CLASS or "Axe",
-            specialTrees = specialHP,
-            rejectSpecial = false,
-            rejectList = nil,
-        }, toolName, isSword
-    end
     return nil, toolName, isSword
 end
 
-local function resolveHitPoints(weaponData, treeClass)
+resolveHitPoints = function(weaponData, treeClass)
     if not weaponData then return nil end
     if SPECIAL_TREES[treeClass] then
         if weaponData.rejectList and weaponData.rejectList[treeClass] then
@@ -7203,25 +7093,22 @@ local function cutAllSections(sections, tool, treeClass, weaponData)
 end
 
 cutPart = function(event, section, height, tool, treeClass, cachedStats)
-    if not tool then
-        notify("No axe equipped", "warn")
+    local weaponData = getWeaponData(tool)
+    if not weaponData then
         return
     end
-    -- 优先用外部传入的缓存，没有才现算
-    local axeStats = cachedStats or getToolStats(tool)
-    if axeStats.SpecialTrees and axeStats.SpecialTrees[treeClass] then
-        for i, v in next, axeStats.SpecialTrees[treeClass] do
-            axeStats[i] = v
-        end
+    local hp, reason = resolveHitPoints(weaponData, treeClass)
+    if not hp then
+        return
     end
     ReplicatedStorage.Interaction.RemoteProxy:FireServer(event, {
         tool = tool,
-        faceVector = Vector3.new(-1, 0, 0),
-        height = height or 0.4,
+        faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
+        height = height or weaponData.height or 0.4,
         sectionId = section or 1,
-        hitPoints = axeStats.Damage,
-        cooldown = axeStats.SwingCooldown,
-        cuttingClass = "Axe"
+        hitPoints = hp,
+        cooldown = weaponData.cooldown,
+        cuttingClass = weaponData.cuttingClass,
     })
 end
 
@@ -7393,7 +7280,6 @@ autofarm = function(treeClass)
     local oldpos = speaker.Character.HumanoidRootPart.CFrame
     local success, data = getBestAxe(treeClass)
     if not success or not data then return end
-    local axeStats = getToolStats(data)
     local tree = getBiggestTree(treeClass)
     if not tree then return notify("没有找到树", "warn") end
     local treeCut = false
@@ -7561,11 +7447,12 @@ lumbsmasher_legitpaint = function(wood_class, blueprint, tpback)
     local CutSize = required_wood / (WoodSection.Size.X * WoodSection.Size.X) + 0.01
     local swing_delay = get_axe_swingdelay(tool)
     local function axe(v, id, h)
-        local hps = get_axe_damage(tool, Wood)
+        local weaponData = getWeaponData(tool)
+        if not weaponData then return end
         local tbl = {
-            ["tool"] = tool, ["faceVector"] = Vector3.new(0, 0, -1),
-            ["height"] = h, ["sectionId"] = id, ["hitPoints"] = hps,
-            ["cooldown"] = 0.112, ["cuttingClass"] = "Axe"
+            ["tool"] = tool, ["faceVector"] = weaponData.faceVector or Vector3.new(0, 0, -1),
+            ["height"] = h, ["sectionId"] = id, ["hitPoints"] = weaponData.hitPoints,
+            ["cooldown"] = weaponData.cooldown, ["cuttingClass"] = weaponData.cuttingClass
         }
         ReplicatedStorage.Interaction.RemoteProxy:FireServer(v.CutEvent, tbl)
         task.wait()
