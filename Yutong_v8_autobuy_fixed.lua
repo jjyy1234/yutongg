@@ -8065,71 +8065,93 @@ unitCutBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 分解树
+-- 分解树（修复版：多轮重收集 + 跟分枝移动 + 更稳发包）
 woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)).MouseButton1Click:Connect(function()
     local OldPos = speaker.Character.HumanoidRootPart.CFrame
-    notify("请你点击一棵树", "info")
+    notify("请你点击一棵已砍倒的树", "info")
+
     local TreeToJointCut
     local DismemberTreeC = Mouse.Button1Up:Connect(function()
         local Clicked = Mouse.Target
         if not Clicked then return end
-        local log = Clicked.Parent
+        local log = Clicked:FindFirstAncestorOfClass("Model") or Clicked.Parent
         if log and log:FindFirstAncestor("LogModels") then
             if log:FindFirstChild("Owner") and log.Owner.Value == speaker then
                 TreeToJointCut = log
             end
         end
     end)
+
     repeat task.wait() until TreeToJointCut ~= nil
     DismemberTreeC:Disconnect()
-
-    local sections = {}
-    for _, v in ipairs(TreeToJointCut:GetChildren()) do
-        if v.Name == "WoodSection" and v:FindFirstChild("ID") and v.ID.Value ~= 1 then
-            table.insert(sections, v)
-        end
-    end
-    if #sections == 0 then
-        notify("没有可分解的分枝", "warn")
-        speaker.Character.HumanoidRootPart.CFrame = OldPos
-        return
-    end
 
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent") or TreeToJointCut:FindFirstChild("CutEvent", true)
-    -- debug
-    print("[v8 debug] treeClass=" .. tostring(treeClass) .. " sections=" .. #sections .. " cutEvent=" .. tostring(cutEvent))
+
+    print("[v8 debug] 分解树 treeClass=" .. tostring(treeClass) .. " cutEvent=" .. tostring(cutEvent))
+
     local okAxe, data = getBestAxe(treeClass)
     if not data then
         notify("没有可用斧头 treeClass=" .. tostring(treeClass), "warn")
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
+
     local weaponData = getWeaponData(data)
-
-    -- 站到树附近一次，然后一次性对全部分枝连砍
-    local mid = sections[1]
-    if mid then
-        speaker.Character.HumanoidRootPart.CFrame = CFrame.new(mid.CFrame.p + Vector3.new(2, 0, 0))
+    if not weaponData then
+        notify("武器数据获取失败", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
     end
-    notify(string.format("分解 %d 个分枝…", #sections), "info")
 
-    -- 多轮快速发包：每 0.005s 一次，覆盖全部分枝
-    for round = 1, 40 do
-        for _, v in ipairs(sections) do
-            if not v.Parent then continue end
-            pcall(function()
-                cutPart(cutEvent, v.ID.Value, 0.2, data, treeClass)
-            end)
-            task.wait(0.005)
+    local function getSections()
+        local s = {}
+        if not TreeToJointCut or not TreeToJointCut.Parent then return s end
+        for _, v in ipairs(TreeToJointCut:GetChildren()) do
+            if v.Name == "WoodSection" and v:FindFirstChild("ID") and v.ID.Value ~= 1 and v.Parent then
+                table.insert(s, v)
+            end
         end
+        return s
     end
 
-    TreeToJointCut = nil
+    local sections = getSections()
+    if #sections == 0 then
+        notify("没有可分解的分枝", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
+    end
+
+    notify(string.format("开始分解 %d 个分枝…", #sections), "info")
+
+    for round = 1, 80 do
+        sections = getSections()
+        if #sections == 0 then
+            break
+        end
+
+        for _, v in ipairs(sections) do
+            if v and v.Parent then
+                pcall(function()
+                    speaker.Character.HumanoidRootPart.CFrame = CFrame.new(v.CFrame.p + Vector3.new(2.8, 1.2, 0))
+                end)
+
+                pcall(function()
+                    cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
+                end)
+
+                task.wait(0.035)
+            end
+        end
+
+        task.wait(0.04)
+    end
+
     speaker.Character.HumanoidRootPart.CFrame = OldPos
     notify("分解完成", "success")
 end)
+
 
 -- 记忆锯木机 + 处理流水线（选树→分解→分枝送锯）
 if not _G.YutongRememberedSawmill then
@@ -8186,163 +8208,168 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         notify("请先点「记忆锯木机」选择锯木机", "warn")
         return
     end
-    local sawTargetCF = CFrame.new(lockedConveyorCF.Position + Vector3.new(0, 0.23, 0)) * (lockedConveyorCF - lockedConveyorCF.Position)
 
+    local sawTargetCF = CFrame.new(lockedConveyorCF.Position + Vector3.new(0, 0.23, 0)) * (lockedConveyorCF - lockedConveyorCF.Position)
     local OldPos = speaker.Character.HumanoidRootPart.CFrame
+
     notify("请点击一棵已砍倒的原木", "info")
+
     local TreeToJointCut
     local pickConn = Mouse.Button1Up:Connect(function()
         local Clicked = Mouse.Target
         if not Clicked then return end
-        local log = Clicked.Parent
+        local log = Clicked:FindFirstAncestorOfClass("Model") or Clicked.Parent
         if log and log:FindFirstAncestor("LogModels") then
             if log:FindFirstChild("Owner") and log.Owner.Value == speaker then
                 TreeToJointCut = log
             end
         end
     end)
+
     repeat task.wait() until TreeToJointCut ~= nil
     pickConn:Disconnect()
     notify("已选原木，开始分解…", "info")
 
-    -- 收集分枝
-    local sections = {}
-    for _, v in ipairs(TreeToJointCut:GetChildren()) do
-        if v.Name == "WoodSection" and v:FindFirstChild("ID") and v.ID.Value ~= 1 then
-            table.insert(sections, v)
-        end
-    end
-
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent") or TreeToJointCut:FindFirstChild("CutEvent", true)
-    -- debug: 只打印 treeClass
-    print("[v8 debug]", "treeClass=" .. tostring(treeClass))
+
+    print("[v8 debug] 流水线 treeClass=" .. tostring(treeClass) .. " cutEvent=" .. tostring(cutEvent))
+
     local okAxe, data = getBestAxe(treeClass)
     if not data then
         notify("没有可用斧头 treeClass=" .. tostring(treeClass), "warn")
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
-    local weaponData = getWeaponData(data)
 
-    if #sections > 0 then
-        local mid = sections[1]
-        speaker.Character.HumanoidRootPart.CFrame = CFrame.new(mid.CFrame.p + Vector3.new(2, 0, 0))
-        -- 逐段并发砍，0.1 秒间隔，并发 3 路
-        if weaponData then
-            -- 等待分解完成：用计数器等3个worker都跑完
-            local done = 0
-            local totalWorkers = 3
-            local origCutAllSections = cutAllSections
-            local function cutAndWait()
-                if not sections or #sections == 0 then done = totalWorkers; return end
-                local hp, reason = resolveHitPoints(weaponData, treeClass)
-                if not hp then
-                    notify("拒绝砍：" .. tostring(treeClass) .. "（武器无对应伤害）", "warn")
-                    done = totalWorkers; return
-                end
-                local proxy = ReplicatedStorage.Interaction.RemoteProxy
-                local n = #sections
-                local function worker(startIdx)
-                    local i = startIdx
-                    while i <= n do
-                        local sec = sections[i]
-                        if sec and sec.Parent then
-                            local secId = sec:FindFirstChild("ID") and sec.ID.Value or 1
-                            proxy:FireServer(cutEvent, {
-                                tool = data,
-                                faceVector = weaponData.faceVector or Vector3.new(0, 0, -1),
-                                height = weaponData.height or 0.4,
-                                sectionId = secId,
-                                hitPoints = hp,
-                                cooldown = weaponData.cooldown,
-                                cuttingClass = weaponData.cuttingClass,
-                            })
-                        end
-                        task.wait(0.1)
-                        i = i + 3
-                    end
-                    done = done + 1
-                end
-                task.spawn(worker, 1)
-                task.spawn(worker, 2)
-                task.spawn(worker, 3)
-            end
-            cutAndWait()
-            local timeout = tick() + 60
-            repeat task.wait(0.3) until done >= totalWorkers or tick() > timeout
-        else
-            -- fallback 原逻辑
-            for round = 1, 40 do
-                for _, v in ipairs(sections) do
-                    if v.Parent then
-                        pcall(function()
-                            cutPart(cutEvent, v.ID.Value, 0.2, data, treeClass)
-                        end)
-                        task.wait(0.005)
-                    end
-                end
-            end
-        end
-        notify("分解完成，传送分枝到锯木机…", "info")
-    else
-        notify("无分枝可分解，直接尝试传送整木…", "warn")
+    local weaponData = getWeaponData(data)
+    if not weaponData then
+        notify("武器数据获取失败", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
     end
 
-    task.wait(0.25)
+    local originalLog = TreeToJointCut
 
-    -- 只传已分解完成的独立木头（Parent 是 workspace 或 LogModels，不再是原木 Model 的子项）
+    local function getSections()
+        local s = {}
+        if not originalLog or not originalLog.Parent then return s end
+        for _, v in ipairs(originalLog:GetChildren()) do
+            if v.Name == "WoodSection" and v:FindFirstChild("ID") and v.ID.Value ~= 1 and v.Parent then
+                table.insert(s, v)
+            end
+        end
+        return s
+    end
+
+    local sections = getSections()
+
+    if #sections > 0 then
+        notify(string.format("分解 %d 个分枝…", #sections), "info")
+
+        for round = 1, 80 do
+            sections = getSections()
+            if #sections == 0 then break end
+
+            for _, v in ipairs(sections) do
+                if v and v.Parent then
+                    pcall(function()
+                        speaker.Character.HumanoidRootPart.CFrame = CFrame.new(v.CFrame.p + Vector3.new(2.8, 1.2, 0))
+                    end)
+
+                    pcall(function()
+                        cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
+                    end)
+
+                    task.wait(0.035)
+                end
+            end
+            task.wait(0.04)
+        end
+
+        notify("分解完成，等待分离…", "info")
+        task.wait(0.6)
+    else
+        notify("无分枝可分解，直接尝试传送整木…", "warn")
+        task.wait(0.3)
+    end
+
     local toMove = {}
-    for _, obj in ipairs(workspace:GetChildren()) do
-        if obj:IsA("Model") and obj.Name == "WoodSection" then
-            local ow = obj:FindFirstChild("Owner")
-            if ow and ow.Value == speaker then
+    local seen = {}
+
+    local function tryAdd(obj)
+        if not obj or seen[obj] then return end
+        if obj == originalLog then return end
+        local ow = obj:FindFirstChild("Owner")
+        if ow and ow.Value == speaker then
+            if obj:FindFirstChild("WoodSection") or obj.Name == "WoodSection" then
+                seen[obj] = true
                 table.insert(toMove, obj)
             end
         end
     end
-    -- 也扫 LogModels 顶层
+
+    for _, obj in ipairs(workspace:GetChildren()) do
+        if obj:IsA("Model") then
+            tryAdd(obj)
+        end
+    end
+
     local logModels = workspace:FindFirstChild("LogModels")
     if logModels then
         for _, obj in ipairs(logModels:GetChildren()) do
-            if obj:IsA("Model") and obj.Name == "WoodSection" then
-                local ow = obj:FindFirstChild("Owner")
-                if ow and ow.Value == speaker then
-                    table.insert(toMove, obj)
-                end
+            if obj:IsA("Model") then
+                tryAdd(obj)
             end
         end
     end
 
+    if #toMove == 0 and originalLog and originalLog.Parent then
+        table.insert(toMove, originalLog)
+    end
+
     local dragRemote = ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
     local moved = 0
-    for _, sec in ipairs(toMove) do
-        if sec and sec.Parent then
-            local model = sec.Parent
+
+    for _, model in ipairs(toMove) do
+        if model and model.Parent then
             pcall(function()
-                if type(teleportOneItem) == "function" then
-                    teleportOneItem(model, sawTargetCF)
-                else
-                    local h = speaker.Character.HumanoidRootPart
-                    h.CFrame = CFrame.new(sec.CFrame.p + Vector3.new(2, 2, 0))
-                    for _ = 1, 12 do
-                        if dragRemote then
+                local targetPart = model:FindFirstChild("WoodSection") or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+                if not targetPart then return end
+
+                speaker.Character.HumanoidRootPart.CFrame = CFrame.new(targetPart.CFrame.p + Vector3.new(2.5, 2, 0))
+                task.wait(0.05)
+
+                for _ = 1, 18 do
+                    if not model.Parent then break end
+
+                    if dragRemote then
+                        pcall(function()
                             dragRemote:FireServer("Begin", model, 5)
                             dragRemote:FireServer("Refresh", model, 5)
-                        end
-                        if model:IsA("Model") then
-                            model:PivotTo(sawTargetCF)
-                        end
-                        if dragRemote then
-                            dragRemote:FireServer("End", model, 5)
-                        end
-                        task.wait(0.04)
+                        end)
                     end
+
+                    if model:IsA("Model") then
+                        pcall(function()
+                            model.PrimaryPart = targetPart
+                            model:PivotTo(sawTargetCF)
+                        end)
+                    end
+
+                    if dragRemote then
+                        pcall(function()
+                            dragRemote:FireServer("End", model, 5)
+                        end)
+                    end
+
+                    task.wait(0.04)
                 end
             end)
+
             moved = moved + 1
-            task.wait(0.08)
+            task.wait(0.1)
         end
     end
 
