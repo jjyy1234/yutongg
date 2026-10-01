@@ -607,7 +607,6 @@ Instance.new("UICorner", closebutton).CornerRadius = UDim.new(1, 0)
 local tabButtons = {}
 local selectedTabIndex = 1
 local selectTab
-do
 local TAB_NAMES = {"首页", "飞行", "传送", "购买", "木头", "其他", "调试"}
 local TAB_COUNT = #TAB_NAMES
 local TAB_WIDTH = px(40)
