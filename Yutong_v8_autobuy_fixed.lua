@@ -6945,6 +6945,11 @@ end
 getBestAxe = function(treeClass)
     -- 只支持 WEAPON_DB 里的武器，不走动态读
     local tools = getTools()
+    -- debug: 打印所有工具名
+    for _, t in ipairs(tools) do
+        local tn = t:FindFirstChild("ToolName")
+        print("[v8 weapon] tool=" .. t.Name .. " ToolName=" .. (tn and tn.Value or "nil"))
+    end
     -- 先找斧头（有 ToolName 的 Tool）
     for _, tool in ipairs(tools) do
         local tn = tool:FindFirstChild("ToolName")
