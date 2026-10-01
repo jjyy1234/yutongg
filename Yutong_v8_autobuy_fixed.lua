@@ -11,11 +11,13 @@ local TeleportService = game:GetService("TeleportService")
 
 -- 授权用户检测（从 GitHub whitelist.txt 加载）
 local AUTHORIZED_USERS = {}
+local _whitelistLoaded = false
 do
     local ok, result = pcall(function()
         return game:HttpGet("https://raw.githubusercontent.com/jjyy1234/yutongg/main/whitelist.txt", true)
     end)
-    if ok and result then
+    if ok and result and #result > 0 then
+        _whitelistLoaded = true
         for name in result:gmatch("[^\r\n]+") do
             name = name:match("^%s*(.-)%s*$")
             if #name > 0 then
@@ -25,9 +27,9 @@ do
     end
 end
 local _authPlayer = Players.LocalPlayer
-if not AUTHORIZED_USERS[_authPlayer.Name] then
-	_authPlayer:Kick("非授权用户")
-	return
+if _whitelistLoaded and not AUTHORIZED_USERS[_authPlayer.Name] then
+    _authPlayer:Kick("非授权用户")
+    return
 end
 
 -- ===== 版本号 =====
