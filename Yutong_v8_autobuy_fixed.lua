@@ -7112,11 +7112,14 @@ cutAllSections = function(sections, tool, treeClass, weaponData, cutEvent)
 end
 
 cutPart = function(event, section, height, tool, treeClass, cachedStats)
-    local weaponData = getWeaponData(tool)
+    local weaponData, wName = getWeaponData(tool)
+    print("[v8 cut] tool=", tool and tool.Name, "wName=", wName, "weaponData=", weaponData ~= nil, "treeClass=", treeClass)
     if not weaponData then
+        print("[v8 cut] weaponData nil, abort")
         return
     end
     local hp, reason = resolveHitPoints(weaponData, treeClass)
+    print("[v8 cut] hp=", hp, "reason=", reason)
     if not hp then
         return
     end
