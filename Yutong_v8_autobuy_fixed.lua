@@ -31,7 +31,7 @@ if not AUTHORIZED_USERS[_authPlayer.Name] then
 end
 
 -- ===== 版本号 =====
-local YUTONG_VERSION = "V8.1.4"
+local YUTONG_VERSION = "V8.5.4"
 pcall(function()
 	game:GetService("StarterGui"):SetCore("SendNotification", {
 		Title = "Yutong Script",
