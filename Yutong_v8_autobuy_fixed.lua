@@ -6971,7 +6971,7 @@ end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 WEAPON_DB = {
-    ["O|Reliable"] = {
+    OlReliable = {
         cooldown = 0.34554792881011964,
         height = 0.37510824203491211,
         faceVector = Vector3.new(0, 0, -1),
@@ -7032,6 +7032,39 @@ getWeaponData = function(tool)
     else
         toolName = tool.Name
     end
+
+    -- 优先从工具实例的 AxeClassDamageOverride 动态读参数
+    local dmgOverride = tool:FindFirstChild("AxeClassDamageOverride")
+    if dmgOverride then
+        local result = { cuttingClass = "Axe", faceVector = Vector3.new(0, 0, -1) }
+        -- cooldown 从 AxeClasses 模块读
+        local ok, axeClass = pcall(function()
+            return require(ReplicatedStorage.AxeClasses["AxeClass_" .. toolName])
+        end)
+        if ok and axeClass then
+            local inst = axeClass.new()
+            result.cooldown = inst.SwingCooldown or 0.3
+        else
+            result.cooldown = 0.3
+        end
+        -- hitPoints 和 specialTrees 从 AxeClassDamageOverride 子项读
+        -- 结构：AxeClassDamageOverride 下有 NumberValue，Name 是树种，Value 是伤害
+        -- 默认伤害（Generic/普通树）
+        local generic = dmgOverride:FindFirstChild("Generic") or dmgOverride:FindFirstChild("Default")
+        result.hitPoints = generic and generic.Value or 800
+        -- 特殊树伤害表
+        result.specialTrees = {}
+        for _, v in ipairs(dmgOverride:GetChildren()) do
+            if v:IsA("NumberValue") or v:IsA("IntValue") then
+                result.specialTrees[v.Name] = v.Value
+            end
+        end
+        result.rejectSpecial = false
+        result.rejectList = nil
+        return result, toolName, isSword
+    end
+
+    -- 兜底查 WEAPON_DB
     local db = WEAPON_DB[toolName]
     if db then
         return db, toolName, isSword
@@ -7041,6 +7074,10 @@ end
 
 resolveHitPoints = function(weaponData, treeClass)
     if not weaponData then return nil end
+    -- 先查 specialTrees（动态读的也在这里）
+    if weaponData.specialTrees and weaponData.specialTrees[treeClass] then
+        return weaponData.specialTrees[treeClass]
+    end
     if SPECIAL_TREES[treeClass] then
         if weaponData.rejectList and weaponData.rejectList[treeClass] then
             return nil, "reject"
@@ -7048,10 +7085,6 @@ resolveHitPoints = function(weaponData, treeClass)
         if weaponData.rejectSpecial then
             return nil, "reject"
         end
-        if weaponData.specialTrees and weaponData.specialTrees[treeClass] then
-            return weaponData.specialTrees[treeClass]
-        end
-        -- 特殊树但没有对应数据 → 拒绝
         return nil, "reject"
     end
     return weaponData.hitPoints
