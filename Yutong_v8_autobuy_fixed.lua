@@ -8096,9 +8096,19 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
+    -- debug: 打印武器名和树种
+    do
+        local tools = getTools()
+        local dbg = "treeClass=" .. tostring(treeClass) .. " | weapons:"
+        for _, t in ipairs(tools) do
+            local tn = t:FindFirstChild("ToolName")
+            dbg = dbg .. " [" .. t.Name .. "/" .. (tn and tn.Value or "noTN") .. "]"
+        end
+        print("[v8 debug]", dbg)
+    end
     local okAxe, data = getBestAxe(treeClass)
     if not data then
-        notify("没有可用斧头", "warn")
+        notify("没有可用斧头 treeClass=" .. tostring(treeClass), "warn")
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
@@ -8205,9 +8215,19 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent")
+    -- debug: 打印武器名和树种
+    do
+        local tools = getTools()
+        local dbg = "treeClass=" .. tostring(treeClass) .. " | weapons:"
+        for _, t in ipairs(tools) do
+            local tn = t:FindFirstChild("ToolName")
+            dbg = dbg .. " [" .. t.Name .. "/" .. (tn and tn.Value or "noTN") .. "]"
+        end
+        print("[v8 debug]", dbg)
+    end
     local okAxe, data = getBestAxe(treeClass)
     if not data then
-        notify("没有可用斧头", "warn")
+        notify("没有可用斧头 treeClass=" .. tostring(treeClass), "warn")
         speaker.Character.HumanoidRootPart.CFrame = OldPos
         return
     end
