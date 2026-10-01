@@ -6988,6 +6988,96 @@ getBestAxe = function(treeClass)
 end
 
 -- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
+-- 动态扫斧头模块，拿 cooldown/hitPoints/specialTrees
+local _axeClassCache = {}
+local function tryRequireAxeClass(toolName)
+    if _axeClassCache[toolName] then return _axeClassCache[toolName] end
+    local RS = game:GetService("ReplicatedStorage")
+
+    -- 1. LoadedAssets 下找
+    local mod
+    local loaded = RS:FindFirstChild("LoadedAssets")
+    if loaded then
+        for _, d in ipairs(loaded:GetDescendants()) do
+            if d:IsA("ModuleScript") and (d.Name == toolName or d.Name == "AxeClass_" .. toolName) then
+                mod = d
+                break
+            end
+        end
+    end
+
+    -- 2. AxeClasses 下找
+    if not mod then
+        local ac = RS:FindFirstChild("AxeClasses")
+        if ac then
+            local candidate = ac:FindFirstChild("AxeClass_" .. toolName) or ac:FindFirstChild(toolName)
+            if candidate and candidate:IsA("ModuleScript") then
+                mod = candidate
+            end
+        end
+    end
+
+    -- 3. 全图搜名字
+    if not mod then
+        for _, d in ipairs(RS:GetDescendants()) do
+            if d:IsA("ModuleScript") and (d.Name == toolName or d.Name == "AxeClass_" .. toolName) then
+                mod = d
+                break
+            end
+        end
+    end
+
+    if not mod then return nil end
+
+    local ok, data = pcall(function() return require(mod) end)
+    if not ok or type(data) ~= "table" then return nil end
+
+    -- 有些模块是 .new() 构造
+    if type(data.new) == "function" then
+        local ok2, inst = pcall(function() return data.new() end)
+        if ok2 and type(inst) == "table" then data = inst end
+    end
+
+    -- 构建 weaponData 格式
+    local result = {
+        cooldown    = data.SwingCooldown or data.cooldown or 0.3,
+        height      = data.Height or data.height or 0.4,
+        faceVector  = data.FaceVector or data.faceVector or Vector3.new(0, 0, -1),
+        hitPoints   = data.Damage or data.hitPoints or 1000,
+        cuttingClass = data.CuttingClass or data.cuttingClass or "Axe",
+        rejectSpecial = false,
+        specialTrees = {},
+    }
+
+    -- 读 AxeClassDamageOverride 子项（实例上的 NumberValue）
+    if mod.Parent then
+        local override = mod.Parent:FindFirstChild("AxeClassDamageOverride")
+            or mod:FindFirstChild("AxeClassDamageOverride")
+        if override then
+            for _, v in ipairs(override:GetChildren()) do
+                if v:IsA("NumberValue") or v:IsA("IntValue") then
+                    result.specialTrees[v.Name] = v.Value
+                end
+            end
+        end
+    end
+
+    -- 读模块里的 SpecialTrees / DamageOverride table
+    if type(data.SpecialTrees) == "table" then
+        for k, v in pairs(data.SpecialTrees) do
+            if type(v) == "table" then
+                result.specialTrees[k] = v.Damage or v.hitPoints or v[1] or result.hitPoints
+            elseif type(v) == "number" then
+                result.specialTrees[k] = v
+            end
+        end
+    end
+
+    _axeClassCache[toolName] = result
+    print("[v8] 动态读取斧头模块:", toolName, "hp=", result.hitPoints, "cd=", result.cooldown)
+    return result
+end
+
 WEAPON_DB = {
     ["Ol' Reliable"] = {
         cooldown = 0.25629998683929445,
@@ -7052,9 +7142,15 @@ getWeaponData = function(tool)
     else
         toolName = tool.Name
     end
+    -- 先查 WEAPON_DB
     local db = WEAPON_DB[toolName]
     if db then
         return db, toolName, isSword
+    end
+    -- 找不到就动态扫模块
+    local dynDb = tryRequireAxeClass(toolName)
+    if dynDb then
+        return dynDb, toolName, isSword
     end
     return nil, toolName, isSword
 end
