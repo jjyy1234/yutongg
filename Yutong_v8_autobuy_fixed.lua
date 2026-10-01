@@ -6911,69 +6911,6 @@ function getBestSawmill()
     return best
 end
 
-function barkgetBestAxe2()
-    local best, bestHP
-    for _, v in ipairs(getAxeList()) do
-        if v.Name == "Tool" then
-            local tn = v:FindFirstChild("ToolName")
-            if tn then
-                local db = tryRequireAxeClass(tn.Value)
-                local hp = db and db.hitPoints or 0
-                if not best or hp > bestHP then
-                    best = v; bestHP = hp
-                end
-            end
-        end
-    end
-    return best
-end
-
-local function getTools()
-    local tools = {}
-    table_foreach(speaker.Backpack:GetChildren(), function(_, v)
-        -- 只要有 ToolName（斧头标志），排除 PaintTool/BlueprintTool 等非斧头
-        if v:FindFirstChild("ToolName") then
-            tools[#tools + 1] = v
-        end
-    end)
-    return tools
-end
-
-local getTool = function()
-    return speaker.Character:FindFirstChild("Tool") or speaker.Backpack:FindFirstChild("Tool")
-end
-
-getBestAxe = function(treeClass)
-    -- 扫 Backpack + Character，有 ToolName 子项就当斧头用
-    local function scanContainer(container)
-        if not container then return nil end
-        for _, v in ipairs(container:GetChildren()) do
-            if v:FindFirstChild("ToolName") then
-                return v
-            end
-        end
-        -- 兜底：名字含 axe/reliable/doom/fallen（不区分大小写）
-        for _, v in ipairs(container:GetChildren()) do
-            local n = v.Name:lower()
-            if n:find("axe") or n:find("reliable") or n:find("doom") or n:find("fallen") then
-                return v
-            end
-        end
-        return nil
-    end
-
-    local tool = scanContainer(speaker.Backpack) or scanContainer(speaker.Character)
-    if tool then
-        return true, tool
-    end
-
-    -- 再找剑
-    local sword = getBestSword()
-    if sword then return true, sword end
-    return false, nil
-end
-
--- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 -- 动态扫斧头模块，拿 cooldown/hitPoints/specialTrees
 local _axeClassCache = {}
 local function tryRequireAxeClass(toolName)
@@ -7063,6 +7000,71 @@ local function tryRequireAxeClass(toolName)
     print("[v8] 动态读取斧头模块:", toolName, "hp=", result.hitPoints, "cd=", result.cooldown)
     return result
 end
+
+
+function barkgetBestAxe2()
+    local best, bestHP
+    for _, v in ipairs(getAxeList()) do
+        if v.Name == "Tool" then
+            local tn = v:FindFirstChild("ToolName")
+            if tn then
+                local db = tryRequireAxeClass(tn.Value)
+                local hp = db and db.hitPoints or 0
+                if not best or hp > bestHP then
+                    best = v; bestHP = hp
+                end
+            end
+        end
+    end
+    return best
+end
+
+local function getTools()
+    local tools = {}
+    table_foreach(speaker.Backpack:GetChildren(), function(_, v)
+        -- 只要有 ToolName（斧头标志），排除 PaintTool/BlueprintTool 等非斧头
+        if v:FindFirstChild("ToolName") then
+            tools[#tools + 1] = v
+        end
+    end)
+    return tools
+end
+
+local getTool = function()
+    return speaker.Character:FindFirstChild("Tool") or speaker.Backpack:FindFirstChild("Tool")
+end
+
+getBestAxe = function(treeClass)
+    -- 扫 Backpack + Character，有 ToolName 子项就当斧头用
+    local function scanContainer(container)
+        if not container then return nil end
+        for _, v in ipairs(container:GetChildren()) do
+            if v:FindFirstChild("ToolName") then
+                return v
+            end
+        end
+        -- 兜底：名字含 axe/reliable/doom/fallen（不区分大小写）
+        for _, v in ipairs(container:GetChildren()) do
+            local n = v.Name:lower()
+            if n:find("axe") or n:find("reliable") or n:find("doom") or n:find("fallen") then
+                return v
+            end
+        end
+        return nil
+    end
+
+    local tool = scanContainer(speaker.Backpack) or scanContainer(speaker.Character)
+    if tool then
+        return true, tool
+    end
+
+    -- 再找剑
+    local sword = getBestSword()
+    if sword then return true, sword end
+    return false, nil
+end
+
+-- ===== [新增] 武器数据库（已确认数值，来自抓包） =====
 
 WEAPON_DB = {}
 
