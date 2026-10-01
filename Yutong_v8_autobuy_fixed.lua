@@ -8065,7 +8065,93 @@ unitCutBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- 分解树（修复版：多轮重收集 + 跟分枝移动 + 更稳发包）
+-- ============================================================
+-- 记忆锯木机 + 分解树 + 处理流水线（完整修复版）
+-- ============================================================
+
+if not _G.YutongRememberedSawmill then
+    _G.YutongRememberedSawmill = nil
+end
+if not _G.YutongLockedConveyorCF then
+    _G.YutongLockedConveyorCF = nil
+end
+if not _G.YutongLockedConveyorPart then
+    _G.YutongLockedConveyorPart = nil
+end
+
+local function resolveSawTargetCF()
+    local part = _G.YutongLockedConveyorPart
+    if part and part.Parent then
+        return CFrame.new(part.Position + Vector3.new(0, 0.35, 0)) * (part.CFrame - part.CFrame.Position)
+    end
+
+    local model = _G.YutongRememberedSawmill
+    if model and model.Parent then
+        local conveyorModel = model:FindFirstChild("Conveyor", true)
+        if conveyorModel then
+            local conveyorPart = conveyorModel:IsA("BasePart") and conveyorModel
+                or conveyorModel:FindFirstChildWhichIsA("BasePart", true)
+            if conveyorPart then
+                _G.YutongLockedConveyorPart = conveyorPart
+                _G.YutongLockedConveyorCF = conveyorPart.CFrame
+                return CFrame.new(conveyorPart.Position + Vector3.new(0, 0.35, 0)) * (conveyorPart.CFrame - conveyorPart.CFrame.Position)
+            end
+        end
+    end
+
+    local cf = _G.YutongLockedConveyorCF
+    if cf then
+        return CFrame.new(cf.Position + Vector3.new(0, 0.35, 0)) * (cf - cf.Position)
+    end
+    return nil
+end
+
+local sawmillBtn = woodBtn("记忆锯木机", Color3.fromRGB(255, 230, 180), Color3.fromRGB(140, 100, 40))
+sawmillBtn.MouseButton1Click:Connect(function()
+    notify("请点击一台锯木机", "info")
+    local conn
+    conn = Mouse.Button1Up:Connect(function()
+        local t = Mouse.Target
+        if not t then return end
+
+        local model = t
+        while model and not model:IsA("Model") do
+            model = model.Parent
+        end
+        if not model then
+            notify("这不是锯木机", "warn")
+            conn:Disconnect()
+            return
+        end
+        while model.Parent and model.Parent:IsA("Model") do
+            model = model.Parent
+        end
+
+        local conveyorModel = model:FindFirstChild("Conveyor", true)
+        if not conveyorModel then
+            notify("这不是锯木机（找不到 Conveyor）", "warn")
+            conn:Disconnect()
+            return
+        end
+
+        local conveyorPart = conveyorModel:IsA("BasePart") and conveyorModel
+            or conveyorModel:FindFirstChildWhichIsA("BasePart", true)
+        if not conveyorPart then
+            notify("Conveyor 找不到 BasePart", "warn")
+            conn:Disconnect()
+            return
+        end
+
+        _G.YutongLockedConveyorCF = conveyorPart.CFrame
+        _G.YutongLockedConveyorPart = conveyorPart
+        _G.YutongRememberedSawmill = model
+        sawmillBtn.Text = "已锁定: " .. model.Name
+        notify("已锁定锯木机: " .. tostring(model.Name) .. "\n位置: " .. tostring(math.floor(conveyorPart.Position.X)) .. ", " .. tostring(math.floor(conveyorPart.Position.Y)) .. ", " .. tostring(math.floor(conveyorPart.Position.Z)), "success")
+        print("[v8] 锁定锯木机", model:GetFullName(), "Conveyor=", conveyorPart:GetFullName(), "Pos=", conveyorPart.Position)
+        conn:Disconnect()
+    end)
+end)
+
 woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)).MouseButton1Click:Connect(function()
     local OldPos = speaker.Character.HumanoidRootPart.CFrame
     notify("请你点击一棵已砍倒的树", "info")
@@ -8125,10 +8211,15 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
 
     notify(string.format("开始分解 %d 个分枝…", #sections), "info")
 
-    for round = 1, 80 do
+    for round = 1, 120 do
         sections = getSections()
         if #sections == 0 then
+            notify("全部分枝已断开", "success")
             break
+        end
+
+        if round % 10 == 1 then
+            notify(string.format("还剩 %d 个分枝 (第%d轮)", #sections, round), "info")
         end
 
         for _, v in ipairs(sections) do
@@ -8136,82 +8227,32 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
                 pcall(function()
                     speaker.Character.HumanoidRootPart.CFrame = CFrame.new(v.CFrame.p + Vector3.new(2.8, 1.2, 0))
                 end)
-
-                pcall(function()
-                    cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
-                end)
-
-                task.wait(0.035)
+                for hit = 1, 3 do
+                    pcall(function()
+                        cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
+                    end)
+                    task.wait(0.02)
+                end
+                task.wait(0.02)
             end
         end
-
-        task.wait(0.04)
+        task.wait(0.05)
     end
 
     speaker.Character.HumanoidRootPart.CFrame = OldPos
     notify("分解完成", "success")
 end)
 
-
--- 记忆锯木机 + 处理流水线（选树→分解→分枝送锯）
-if not _G.YutongRememberedSawmill then
-    _G.YutongRememberedSawmill = nil
-end
-
-if not _G.YutongLockedConveyorCF then
-    _G.YutongLockedConveyorCF = nil
-end
-
-local sawmillBtn = woodBtn("记忆锯木机", Color3.fromRGB(255, 230, 180), Color3.fromRGB(140, 100, 40))
-sawmillBtn.MouseButton1Click:Connect(function()
-    notify("请点击一台锯木机", "info")
-    local conn
-    conn = Mouse.Button1Up:Connect(function()
-        local t = Mouse.Target
-        if not t then return end
-        local model = t
-        while model and not model:IsA("Model") do
-            model = model.Parent
-        end
-        if not model then
-            notify("这不是锯木机", "warn")
-            conn:Disconnect()
-            return
-        end
-        while model.Parent and model.Parent:IsA("Model") do
-            model = model.Parent
-        end
-        local conveyorModel = model:FindFirstChild("Conveyor", true)
-        if not conveyorModel then
-            notify("这不是锯木机", "warn")
-            conn:Disconnect()
-            return
-        end
-        local conveyorPart = conveyorModel:IsA("BasePart") and conveyorModel
-            or conveyorModel:FindFirstChildWhichIsA("BasePart", true)
-        if not conveyorPart then
-            notify("Conveyor 找不到 BasePart", "warn")
-            conn:Disconnect()
-            return
-        end
-        _G.YutongLockedConveyorCF = conveyorPart.CFrame
-        _G.YutongRememberedSawmill = model
-        sawmillBtn.Text = "已锁定: " .. model.Name
-        notify("已锁定锯木机: " .. tostring(model.Name) .. "\nConveyor: " .. conveyorPart:GetFullName(), "success")
-        conn:Disconnect()
-    end)
-end)
-
 woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125, 94)).MouseButton1Click:Connect(function()
-    local lockedConveyorCF = _G.YutongLockedConveyorCF
-    if not lockedConveyorCF then
+    local sawTargetCF = resolveSawTargetCF()
+    if not sawTargetCF then
         notify("请先点「记忆锯木机」选择锯木机", "warn")
         return
     end
 
-    local sawTargetCF = CFrame.new(lockedConveyorCF.Position + Vector3.new(0, 0.23, 0)) * (lockedConveyorCF - lockedConveyorCF.Position)
-    local OldPos = speaker.Character.HumanoidRootPart.CFrame
+    print("[v8] 流水线目标坐标", sawTargetCF.Position)
 
+    local OldPos = speaker.Character.HumanoidRootPart.CFrame
     notify("请点击一棵已砍倒的原木", "info")
 
     local TreeToJointCut
@@ -8268,32 +8309,48 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
     if #sections > 0 then
         notify(string.format("分解 %d 个分枝…", #sections), "info")
 
-        for round = 1, 80 do
+        for round = 1, 120 do
             sections = getSections()
-            if #sections == 0 then break end
+            if #sections == 0 then
+                notify("全部分枝已断开", "success")
+                break
+            end
+
+            if round % 10 == 1 then
+                notify(string.format("还剩 %d 个分枝 (第%d轮)", #sections, round), "info")
+            end
 
             for _, v in ipairs(sections) do
                 if v and v.Parent then
                     pcall(function()
                         speaker.Character.HumanoidRootPart.CFrame = CFrame.new(v.CFrame.p + Vector3.new(2.8, 1.2, 0))
                     end)
-
-                    pcall(function()
-                        cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
-                    end)
-
-                    task.wait(0.035)
+                    for hit = 1, 3 do
+                        pcall(function()
+                            cutPart(cutEvent, v.ID.Value, 0.25, data, treeClass)
+                        end)
+                        task.wait(0.02)
+                    end
+                    task.wait(0.02)
                 end
             end
-            task.wait(0.04)
+            task.wait(0.05)
         end
 
-        notify("分解完成，等待分离…", "info")
-        task.wait(0.6)
+        notify("等待木头分离…", "info")
+        task.wait(1.0)
     else
-        notify("无分枝可分解，直接尝试传送整木…", "warn")
+        notify("无分枝可分解，直接传送整木…", "warn")
         task.wait(0.3)
     end
+
+    sawTargetCF = resolveSawTargetCF()
+    if not sawTargetCF then
+        notify("锯木机坐标丢失", "warn")
+        speaker.Character.HumanoidRootPart.CFrame = OldPos
+        return
+    end
+    print("[v8] 最终传送目标", sawTargetCF.Position)
 
     local toMove = {}
     local seen = {}
@@ -8302,17 +8359,11 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
         if not obj or seen[obj] then return end
         if obj == originalLog then return end
         local ow = obj:FindFirstChild("Owner")
-        if ow and ow.Value == speaker then
-            if obj:FindFirstChild("WoodSection") or obj.Name == "WoodSection" then
-                seen[obj] = true
-                table.insert(toMove, obj)
-            end
-        end
-    end
-
-    for _, obj in ipairs(workspace:GetChildren()) do
-        if obj:IsA("Model") then
-            tryAdd(obj)
+        if not (ow and ow.Value == speaker) then return end
+        local hasWood = obj:FindFirstChild("WoodSection") or obj.Name == "WoodSection"
+        if hasWood then
+            seen[obj] = true
+            table.insert(toMove, obj)
         end
     end
 
@@ -8327,49 +8378,56 @@ woodBtn("处理流水线", Color3.fromRGB(194, 231, 211), Color3.fromRGB(74, 125
 
     if #toMove == 0 and originalLog and originalLog.Parent then
         table.insert(toMove, originalLog)
+        notify("未分离出分枝，传送整木", "warn")
     end
 
-    local dragRemote = ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
-    local moved = 0
+    notify(string.format("准备传送 %d 段木头到锯木机…", #toMove), "info")
 
+    local moved = 0
     for _, model in ipairs(toMove) do
         if model and model.Parent then
-            pcall(function()
-                local targetPart = model:FindFirstChild("WoodSection") or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-                if not targetPart then return end
+            local ok = false
+            if type(teleportOneItem) == "function" then
+                ok = pcall(function()
+                    teleportOneItem(model, sawTargetCF)
+                end)
+            end
 
-                speaker.Character.HumanoidRootPart.CFrame = CFrame.new(targetPart.CFrame.p + Vector3.new(2.5, 2, 0))
-                task.wait(0.05)
+            if not ok then
+                pcall(function()
+                    local targetPart = model:FindFirstChild("WoodSection") or model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
+                    if not targetPart then return end
 
-                for _ = 1, 18 do
-                    if not model.Parent then break end
+                    speaker.Character.HumanoidRootPart.CFrame = CFrame.new(targetPart.CFrame.p + Vector3.new(2.5, 2, 0))
+                    task.wait(0.05)
 
-                    if dragRemote then
+                    local dragRemote = ReplicatedStorage.Interaction:FindFirstChild("ClientIsDragging")
+                    for _ = 1, 25 do
+                        if not model.Parent then break end
+                        if dragRemote then
+                            pcall(function()
+                                dragRemote:FireServer("Begin", model, 5)
+                                dragRemote:FireServer("Refresh", model, 5)
+                            end)
+                        end
                         pcall(function()
-                            dragRemote:FireServer("Begin", model, 5)
-                            dragRemote:FireServer("Refresh", model, 5)
+                            if model:IsA("Model") then
+                                model.PrimaryPart = targetPart
+                                model:PivotTo(sawTargetCF)
+                            end
                         end)
+                        if dragRemote then
+                            pcall(function()
+                                dragRemote:FireServer("End", model, 5)
+                            end)
+                        end
+                        task.wait(0.03)
                     end
-
-                    if model:IsA("Model") then
-                        pcall(function()
-                            model.PrimaryPart = targetPart
-                            model:PivotTo(sawTargetCF)
-                        end)
-                    end
-
-                    if dragRemote then
-                        pcall(function()
-                            dragRemote:FireServer("End", model, 5)
-                        end)
-                    end
-
-                    task.wait(0.04)
-                end
-            end)
+                end)
+            end
 
             moved = moved + 1
-            task.wait(0.1)
+            task.wait(0.15)
         end
     end
 
