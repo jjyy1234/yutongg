@@ -8098,8 +8098,8 @@ woodBtn("分解树", Color3.fromRGB(247, 202, 211), Color3.fromRGB(146, 83, 101)
     local treeClassVal = TreeToJointCut:FindFirstChild("TreeClass")
     local treeClass = treeClassVal and treeClassVal.Value
     local cutEvent = TreeToJointCut:FindFirstChild("CutEvent") or TreeToJointCut:FindFirstChild("CutEvent", true)
-    -- debug: 只打印 treeClass
-    print("[v8 debug]", "treeClass=" .. tostring(treeClass))
+    -- debug
+    print("[v8 debug] treeClass=" .. tostring(treeClass) .. " sections=" .. #sections .. " cutEvent=" .. tostring(cutEvent))
     local okAxe, data = getBestAxe(treeClass)
     if not data then
         notify("没有可用斧头 treeClass=" .. tostring(treeClass), "warn")
