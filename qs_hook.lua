@@ -1,13 +1,24 @@
--- Hook via hookfunction, no script modification needed
-local old_ls = hookfunction(loadstring, function(code, ...)
-    local n = (typeof and typeof(code) == 'string') and #code or 0
-    if n > 100 then
-        local idx = (not _G.__dumpcount and 1 or _G.__dumpcount + 1)
-        _G.__dumpcount = idx
-        pcall(writefile, 'qs_dump_' .. idx .. '.lua', tostring(code))
-    end
-    return old_ls(code, ...)
+-- Run QinScript first, completely unmodified
+local ok, err = pcall(function()
+    loadstring(game:HttpGet('http://QinScript.lol/333/main.lua?XGnb3'))()
 end)
 
--- Now load QinScript fresh from URL (unmodified)
-loadstring(game:HttpGet('http://QinScript.lol/333/main.lua?XGnb3'))()
+-- After it runs, dump all loaded function sources via getgc
+task.delay(3, function()
+    local seen = {}
+    local count = 0
+    for _, v in ipairs(getgc(true)) do
+        if type(v) == 'function' then
+            local ok2, info = pcall(function() return debug.getinfo(v, 'S') end)
+            if ok2 and info and info.source and not seen[info.source] then
+                local src = info.source
+                if #src > 200 and not src:find('CoreGui') and not src:find('RobloxGui') then
+                    seen[src] = true
+                    count = count + 1
+                    pcall(writefile, 'gc_dump_' .. count .. '.lua', src)
+                end
+            end
+        end
+    end
+    print('[DUMP] wrote ' .. count .. ' files')
+end)
