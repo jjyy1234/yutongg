@@ -1,8 +1,13 @@
-local old_loadstring = loadstring
-local _dump_count = 0
-loadstring = function(code)
-    _dump_count = _dump_count + 1
-    pcall(writefile, "qs_dump_" .. _dump_count .. ".lua", tostring(code))
-    return old_loadstring(code)
-end
-loadstring(game:HttpGet("http://QinScript.lol/333/main.lua?XGnb3"))()
+-- Hook via hookfunction, no script modification needed
+local old_ls = hookfunction(loadstring, function(code, ...)
+    local n = (typeof and typeof(code) == 'string') and #code or 0
+    if n > 100 then
+        local idx = (not _G.__dumpcount and 1 or _G.__dumpcount + 1)
+        _G.__dumpcount = idx
+        pcall(writefile, 'qs_dump_' .. idx .. '.lua', tostring(code))
+    end
+    return old_ls(code, ...)
+end)
+
+-- Now load QinScript fresh from URL (unmodified)
+loadstring(game:HttpGet('http://QinScript.lol/333/main.lua?XGnb3'))()
